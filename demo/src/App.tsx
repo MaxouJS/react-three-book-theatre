@@ -13,6 +13,7 @@ import {
 import BookScene from './components/BookScene';
 import LeftPanel from './components/LeftPanel';
 import RightPanel from './components/RightPanel';
+import PageEditor from './components/PageEditor';
 
 const MAX_PAGES = 20;
 
@@ -26,6 +27,7 @@ export default function App() {
     Array.from({ length: MAX_PAGES }, () => createDefaultPageConfig()),
   );
   const [status, setStatus] = useState('Building...');
+  const [editorPage, setEditorPage] = useState(0);
   const bookRef = useRef<ThreeBook | null>(null);
   const spriteScenes = useRef<SpriteScene[]>([]);
 
@@ -97,6 +99,12 @@ export default function App() {
         onCoverSlotChange={onCoverSlotChange}
         onPageConfigChange={onPageConfigChange}
         onRebuild={rebuild}
+      />
+      <PageEditor
+        currentPage={editorPage}
+        pageCount={params.pageCount}
+        spriteScenes={spriteScenes}
+        onPageChange={setEditorPage}
       />
     </>
   );

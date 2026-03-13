@@ -54,12 +54,16 @@ export default function BookScene({
     // Dispose old scenes
     for (const s of spriteScenes.current) s.dispose();
 
+    const PAGE_BASE = 512;
+    const pageCanvasW = PAGE_BASE;
+    const pageCanvasH = Math.round(PAGE_BASE * params.pageHeight / params.pageWidth);
+
     const newScenes: SpriteScene[] = [];
     for (let i = 0; i < params.pageCount; i++) {
       const cfg = pageConfigs[i];
       const scene = new SpriteScene({
-        width: 512,
-        height: 512,
+        width: pageCanvasW,
+        height: pageCanvasH,
         background: cfg.background,
         horizonFraction: cfg.horizonFraction,
         pageDistance: cfg.pageDistance,
