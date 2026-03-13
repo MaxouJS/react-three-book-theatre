@@ -1,0 +1,11 @@
+{
+  "name": "react-three-book-theatre-workspace",
+  "private": true,
+  "scripts": {
+    "build": "pnpm --filter @objectifthunes/react-three-book-theatre build",
+    "dev": "pnpm --filter @objectifthunes/react-three-book-theatre build && pnpm --filter react-three-book-theatre-demo dev"
+  },
+  "devDependencies": {
+    "playwright": "^1.58.2"
+  }
+}
