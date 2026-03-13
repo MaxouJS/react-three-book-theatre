@@ -5,11 +5,11 @@
 The theatre core (`SpriteScene`, `Sprite`, `Element`, perspective helpers) is embedded natively — no separate `three-book-theatre` dependency required.
 
 <p align="center">
-  <img src="docs/images/default.png" width="49%" alt="Closed book with sprite pages" />
-  <img src="docs/images/open-half.png" width="49%" alt="Book opened showing sprites" />
+  <img src="https://raw.githubusercontent.com/AMusic-Max/react-three-book-theatre/main/docs/images/default.png" width="49%" alt="Closed book with sprite pages" />
+  <img src="https://raw.githubusercontent.com/AMusic-Max/react-three-book-theatre/main/docs/images/open-half.png" width="49%" alt="Book opened showing sprites" />
 </p>
 <p align="center">
-  <img src="docs/images/demo-ui.png" width="98%" alt="Demo app with theatre controls" />
+  <img src="https://raw.githubusercontent.com/AMusic-Max/react-three-book-theatre/main/docs/images/demo-ui.png" width="98%" alt="Demo app with theatre controls" />
 </p>
 
 ## Features
