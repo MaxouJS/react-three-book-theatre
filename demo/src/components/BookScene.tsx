@@ -64,7 +64,7 @@ export default function BookScene({
       const scene = new SpriteScene({
         width: pageCanvasW,
         height: pageCanvasH,
-        background: cfg.background,
+        background: params.pageColor,
         horizonFraction: cfg.horizonFraction,
         pageDistance: cfg.pageDistance,
         spriteCount: 0, // we'll add manually
@@ -78,6 +78,8 @@ export default function BookScene({
           placement: ch.placement,
           distance: ch.distance,
           intrinsicSize: ch.intrinsicSize,
+          animated: ch.animated,
+          depthScaling: ch.depthScaling,
           idleImage: ch.idleImage,
           walkImage: ch.walkImage,
           actionImage: ch.actionImage,
@@ -90,6 +92,7 @@ export default function BookScene({
           placement: el.placement,
           distance: el.distance,
           intrinsicSize: el.intrinsicSize,
+          depthScaling: el.depthScaling,
           image: el.image,
         });
       }

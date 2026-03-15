@@ -63,6 +63,8 @@ export interface SpriteUpdateOptions {
   idleImage?:     HTMLImageElement | null;
   walkImage?:     HTMLImageElement | null;
   actionImage?:   HTMLImageElement | null;
+  animated?:      boolean;
+  depthScaling?:  boolean;
 }
 
 /** Options for `SpriteScene.updateElement()`. */
@@ -71,6 +73,7 @@ export interface ElementUpdateOptions {
   intrinsicSize?: number;
   placement?:     SpritePlacement;
   image?:         HTMLImageElement | null;
+  depthScaling?:  boolean;
 }
 
 // ── Internal helper ───────────────────────────────────────────────────────────
@@ -194,6 +197,8 @@ export class SpriteScene {
     if (options.idleImage     !== undefined) s.idleImage     = options.idleImage;
     if (options.walkImage     !== undefined) s.walkImage     = options.walkImage;
     if (options.actionImage   !== undefined) s.actionImage   = options.actionImage;
+    if (options.animated      !== undefined) s.animated      = options.animated;
+    if (options.depthScaling  !== undefined) s.depthScaling  = options.depthScaling;
     if (options.placement !== undefined && options.placement !== s.placement) {
       const savedDistance = s.distance;
       s.placement = options.placement;
@@ -211,6 +216,7 @@ export class SpriteScene {
     if (!e) return;
     if (options.intrinsicSize !== undefined) e.intrinsicSize = options.intrinsicSize;
     if (options.image         !== undefined) e.image         = options.image;
+    if (options.depthScaling  !== undefined) e.depthScaling  = options.depthScaling;
     if (options.placement !== undefined && options.placement !== e.placement) {
       const savedDistance = e.distance;
       e.placement = options.placement;

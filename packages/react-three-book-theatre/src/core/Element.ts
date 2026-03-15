@@ -19,6 +19,8 @@ export interface ElementOptions {
   distance?: number;
   /** Intrinsic size in canvas pixels at d = 1 m (default 100). */
   intrinsicSize?: number;
+  /** Enable depth-based size scaling. Default true. */
+  depthScaling?: boolean;
   image?: HTMLImageElement | null;
 }
 
@@ -36,6 +38,7 @@ export class Element extends Positionable {
       options?.placement     ?? 'ground',
       options?.intrinsicSize ?? 100,
       options?.pageDistance  ?? 10,
+      options?.depthScaling  ?? true,
     );
     this.image = options?.image ?? null;
     this._placeItem(options ?? {});
@@ -43,7 +46,9 @@ export class Element extends Positionable {
 
   draw(ctx: CanvasRenderingContext2D): void {
     if (!this.image) return;
-    const sz = renderedSize(this.r, this.intrinsicSize, this.pageDistance);
+    const sz = this.depthScaling
+      ? renderedSize(this.r, this.intrinsicSize, this.pageDistance)
+      : this.intrinsicSize;
     // Top-pin: keep top visible, let bottom clip instead of top.
     ctx.drawImage(this.image, this.x - sz / 2, Math.max(0, this.y - sz), sz, sz);
   }

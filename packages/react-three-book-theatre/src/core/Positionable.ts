@@ -20,6 +20,8 @@ export abstract class Positionable {
   intrinsicSize: number;
   pageDistance:  number;
   horizonY:      number;
+  /** When false, rendered size equals intrinsicSize regardless of depth (default true). */
+  depthScaling:  boolean;
 
   protected readonly canvasW: number;
   protected readonly canvasH: number;
@@ -31,6 +33,7 @@ export abstract class Positionable {
     placement:     SpritePlacement = 'ground',
     intrinsicSize: number          = 100,
     pageDistance:  number          = 10,
+    depthScaling:  boolean         = true,
   ) {
     this.canvasW       = canvasWidth;
     this.canvasH       = canvasHeight;
@@ -38,6 +41,7 @@ export abstract class Positionable {
     this.placement     = placement;
     this.intrinsicSize = intrinsicSize;
     this.pageDistance  = pageDistance;
+    this.depthScaling  = depthScaling;
   }
 
   /** Band fraction r: 0 = at viewer, 1 = at horizon. */

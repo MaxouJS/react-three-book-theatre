@@ -1,4 +1,4 @@
-import type { RefObject } from 'react';
+import { useState, type RefObject } from 'react';
 import type { ThreeBook } from '@objectifthunes/react-three-book-theatre';
 import type { DemoParams, DirectionOption } from '../state';
 import {
@@ -27,18 +27,34 @@ export default function LeftPanel({
   onPageCountChange,
   onRebuild,
 }: LeftPanelProps) {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
     <div style={{ ...PANEL_STYLE, left: 10 }}>
-      <h1 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700 }}>
-        react-three-book-theatre demo
-      </h1>
-      <p style={{ margin: '0 0 10px', color: 'rgba(236, 242, 255, 0.82)', fontSize: 12 }}>
-        Drag pages to turn. Sprites animate autonomously on each page.
-      </p>
-      <div style={{ marginBottom: 10, color: '#8cf0bf', fontWeight: 700, fontSize: 12 }}>
-        {status}
+      <div style={{ marginBottom: 10 }}>
+        <h1
+          style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, position: 'relative', cursor: 'pointer' }}
+          onClick={() => setCollapsed((c) => !c)}
+        >
+          react-three-book-theatre
+          <span style={{
+            position: 'absolute', top: 0, right: 0, width: 22, height: 22, padding: 0,
+            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(236,242,255,0.15)',
+            borderRadius: 6, color: 'rgba(236,242,255,0.68)', fontSize: 11, lineHeight: '22px',
+            textAlign: 'center', display: 'inline-block',
+          }}>
+            {collapsed ? '\u25B8' : '\u25BE'}
+          </span>
+        </h1>
+        <p style={{ margin: '0 0 6px', color: 'rgba(236, 242, 255, 0.82)', fontSize: 12 }}>
+          Drag pages to turn. Orbit: right-click + wheel.
+        </p>
+        <div style={{ color: '#8cf0bf', fontWeight: 700, fontSize: 12 }}>
+          {status}
+        </div>
       </div>
 
+      {collapsed ? null : <>
       {/* Page Paper */}
       <SectionTitle text="Page Paper" />
 
@@ -48,11 +64,11 @@ export default function LeftPanel({
       <Slider label="Stiffness" min={0}     max={1}    step={0.01}  value={params.pageStiffness} onChange={(v) => onParamChange('pageStiffness', v)} />
       <Slider
         label="Count"
-        min={2} max={20} step={1}
+        min={2} max={40} step={1}
         value={params.pageCount}
         onChange={(v) => onPageCountChange(Math.max(2, Math.floor(v)))}
       />
-      <ColorPicker label="Page Color" value={params.pageColor} onChange={(v) => onParamChange('pageColor', v)} />
+      <ColorPicker label="Page Background" value={params.pageColor} onChange={(v) => onParamChange('pageColor', v)} />
 
       {/* Cover Paper */}
       <SectionTitle text="Cover Paper" />
@@ -127,6 +143,7 @@ export default function LeftPanel({
       <Slider label="Sun X"             min={-12} max={12} step={0.1} value={params.sunX}             onChange={(v) => onParamChange('sunX', v, false)} />
       <Slider label="Sun Y"             min={1}   max={20} step={0.1} value={params.sunY}             onChange={(v) => onParamChange('sunY', v, false)} />
       <Slider label="Sun Z"             min={-12} max={12} step={0.1} value={params.sunZ}             onChange={(v) => onParamChange('sunZ', v, false)} />
+      </>}
     </div>
   );
 }

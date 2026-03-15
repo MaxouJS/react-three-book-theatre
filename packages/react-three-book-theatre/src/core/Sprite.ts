@@ -53,6 +53,10 @@ export interface SpriteOptions {
   actionDuration?: number;
   /** Base walk speed in canvas pixels per second (default 75). */
   walkSpeed?: number;
+  /** Enable autonomous movement (walk/action state machine). Default true. */
+  animated?: boolean;
+  /** Enable depth-based size scaling. Default true. */
+  depthScaling?: boolean;
 }
 
 // ── Palette ───────────────────────────────────────────────────────────────────
@@ -69,6 +73,8 @@ function nextColor(): string { return PALETTE[_paletteIdx++ % PALETTE.length]; }
 
 export class Sprite extends Positionable {
   color: string;
+  /** When false, the autonomous state machine is frozen (no walk/action). */
+  animated: boolean;
   /** Current animation state (read-only externally — use trigger*() to change). */
   get state(): SpriteState { return this._state; }
   private _state: SpriteState = 'idle';
@@ -105,7 +111,9 @@ export class Sprite extends Positionable {
       options?.placement     ?? 'ground',
       options?.intrinsicSize ?? 100,
       options?.pageDistance  ?? 10,
+      options?.depthScaling  ?? true,
     );
+    this.animated    = options?.animated    ?? true;
     this.color       = options?.color       ?? nextColor();
     this.idleImage   = options?.idleImage   ?? null;
     this.walkImage   = options?.walkImage   ?? null;
@@ -171,6 +179,7 @@ export class Sprite extends Positionable {
   // ── Per-frame update ──────────────────────────────────────────────────────
 
   update(dt: number): void {
+    if (!this.animated) return;
     this.stateTimer += dt;
 
     switch (this._state) {
@@ -189,7 +198,8 @@ export class Sprite extends Positionable {
           this.y = this.targetY;
           this._enterIdle();
         } else {
-          const step = Math.min(this._walkSpeed * depthScale(this.r) * dt, dist);
+          const speed = this.depthScaling ? depthScale(this.r) : 1;
+          const step = Math.min(this._walkSpeed * speed * dt, dist);
           this.x += (dx / dist) * step;
           this.y += (dy / dist) * step;
           this._phase = (this._phase + dt * 9) % (Math.PI * 2);
@@ -207,7 +217,9 @@ export class Sprite extends Positionable {
   // ── Drawing ───────────────────────────────────────────────────────────────
 
   draw(ctx: CanvasRenderingContext2D): void {
-    const sz    = renderedSize(this.r, this.intrinsicSize, this.pageDistance);
+    const sz    = this.depthScaling
+      ? renderedSize(this.r, this.intrinsicSize, this.pageDistance)
+      : this.intrinsicSize;
     const bodyW = sz * 0.44;
 
     // Vertical bounce / jump offset

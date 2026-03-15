@@ -15,7 +15,7 @@ import LeftPanel from './components/LeftPanel';
 import RightPanel from './components/RightPanel';
 import PageEditor from './components/PageEditor';
 
-const MAX_PAGES = 20;
+const MAX_PAGES = 40;
 
 export default function App() {
   const [params, setParams] = useState<DemoParams>(defaultParams);
@@ -50,8 +50,8 @@ export default function App() {
 
   const onBuilt = useCallback((book: ThreeBook) => {
     bookRef.current = book;
-    setStatus(`Built — ${book.paperCount} papers`);
-  }, []);
+    setStatus(`Book built: ${book.paperCount} papers, ${params.pageCount} sprite scenes`);
+  }, [params.pageCount]);
 
   const onError = useCallback((err: Error) => setStatus(`Error: ${err.message}`), []);
 
@@ -96,6 +96,8 @@ export default function App() {
         coverSlots={coverSlots}
         pageConfigs={pageConfigs}
         spriteScenes={spriteScenes}
+        currentPage={editorPage}
+        onPageChange={setEditorPage}
         onCoverSlotChange={onCoverSlotChange}
         onPageConfigChange={onPageConfigChange}
         onRebuild={rebuild}
@@ -106,6 +108,18 @@ export default function App() {
         spriteScenes={spriteScenes}
         onPageChange={setEditorPage}
       />
+      <div style={{
+        position: 'fixed',
+        bottom: 10,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        color: '#9aa3bf',
+        fontFamily: 'monospace',
+        fontSize: 12,
+        pointerEvents: 'none',
+      }}>
+        Click + drag pages to turn  |  Orbit: right-click / scroll
+      </div>
     </>
   );
 }

@@ -17,6 +17,8 @@ export interface CharacterConfig {
   placement: SpritePlacement;
   distance: number;
   intrinsicSize: number;
+  animated: boolean;
+  depthScaling: boolean;
   idleImage: HTMLImageElement | null;
   walkImage: HTMLImageElement | null;
   actionImage: HTMLImageElement | null;
@@ -26,6 +28,7 @@ export interface ElementConfig {
   placement: SpritePlacement;
   distance: number;
   intrinsicSize: number;
+  depthScaling: boolean;
   image: HTMLImageElement | null;
 }
 
@@ -35,6 +38,7 @@ export interface PageConfig {
   background: string;
   backgroundImage: HTMLImageElement | null;
   backgroundImageFit: ImageFit;
+  backgroundFullBleed: boolean;
   characters: CharacterConfig[];
   elements: ElementConfig[];
 }
@@ -73,12 +77,12 @@ export const defaultParams: DemoParams = {
   pageThickness: 0.02,
   pageStiffness: 0.2,
   pageCount: 8,
-  pageColor: '#f5f5dc',
+  pageColor: '#e8d5b5',
   coverWidth: 2.1,
   coverHeight: 3.1,
   coverThickness: 0.04,
   coverStiffness: 0.5,
-  coverColor: '#ff0000',
+  coverColor: '#c04040',
   direction: 'left-to-right',
   openProgress: 0,
   castShadows: true,
@@ -114,6 +118,8 @@ export const DEFAULT_CHARACTER: CharacterConfig = {
   placement: 'ground',
   distance: 5,
   intrinsicSize: 100,
+  animated: true,
+  depthScaling: true,
   idleImage: null,
   walkImage: null,
   actionImage: null,
@@ -123,6 +129,7 @@ export const DEFAULT_ELEMENT: ElementConfig = {
   placement: 'ground',
   distance: 5,
   intrinsicSize: 100,
+  depthScaling: true,
   image: null,
 };
 
@@ -133,6 +140,7 @@ export function createDefaultPageConfig(): PageConfig {
     background: '#e8d5b5',
     backgroundImage: null,
     backgroundImageFit: 'cover',
+    backgroundFullBleed: true,
     characters: [
       { ...DEFAULT_CHARACTER },
       { ...DEFAULT_CHARACTER },
