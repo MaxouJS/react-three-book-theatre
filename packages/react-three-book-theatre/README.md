@@ -19,6 +19,7 @@ The theatre core (`SpriteScene`, `Sprite`, `Element`, perspective helpers) is em
 - **Animated sprites** — autonomous 2D characters with idle/walk/action state machine.
 - **Static elements** — place images (trees, props, furniture) at any depth.
 - **Parallax depth** — band-fraction depth model with configurable horizon, ground/sky perspective.
+- **Optional animations & depth scaling** — disable per-sprite/element or book-wide via `SpriteScene.animated` / `SpriteScene.depthScaling`.
 - **Full react-three-book re-export** — single import for the entire book + theatre API.
 
 ## Installation
@@ -63,6 +64,8 @@ function MyBook() {
       placement: 'ground',
       distance: 5,
       intrinsicSize: 100,
+      animated: true,       // optional, default true
+      depthScaling: true,   // optional, default true
       idleImage: myCharImg,
     });
     return () => scene.dispose();
@@ -102,6 +105,36 @@ export default function App() {
 | `<SpriteSceneUpdater>` | Component | Place inside `<Book>` — calls `scene.update(dt, book)` every frame |
 | `useSpriteScene(opts)` | Hook | Create a single `SpriteScene`, auto-dispose on unmount |
 | `useSpriteScenes(optsArray)` | Hook | Create an array of `SpriteScene` instances, auto-dispose on unmount |
+
+## Animations & Depth Scaling
+
+Both features are enabled by default and can be toggled at two levels:
+
+**Per-sprite / per-element** — set `animated` or `depthScaling` on individual items:
+
+```ts
+sprite.animated = false;      // freeze this sprite (stops state machine)
+sprite.depthScaling = false;  // render at intrinsicSize regardless of depth
+element.depthScaling = false; // same for elements
+```
+
+**Scene-wide** — use `SpriteScene.animated` / `SpriteScene.depthScaling` to override all items at once:
+
+```ts
+spriteScene.animated = false;     // freeze ALL sprites in this scene
+spriteScene.depthScaling = false; // disable depth scaling for ALL items
+```
+
+Scene-level defaults can also be set at construction time:
+
+```ts
+const scene = new SpriteScene({
+  animated: false,      // all sprites start frozen
+  depthScaling: false,  // all items render at intrinsicSize
+});
+```
+
+Newly added sprites/elements inherit the current scene-level defaults.
 
 ## Embedded Core
 
