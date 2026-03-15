@@ -1,5 +1,5 @@
 import { useState, type RefObject } from 'react';
-import type { ThreeBook } from '@objectifthunes/react-three-book-theatre';
+import type { ThreeBook, SpriteScene } from '@objectifthunes/react-three-book-theatre';
 import type { DemoParams, DirectionOption } from '../state';
 import {
   PANEL_STYLE,
@@ -14,6 +14,7 @@ interface LeftPanelProps {
   params: DemoParams;
   status: string;
   bookRef: RefObject<ThreeBook | null>;
+  spriteScenes: React.MutableRefObject<SpriteScene[]>;
   onParamChange: <K extends keyof DemoParams>(key: K, value: DemoParams[K], rebuild?: boolean) => void;
   onPageCountChange: (count: number) => void;
   onRebuild: () => void;
@@ -23,6 +24,7 @@ export default function LeftPanel({
   params,
   status,
   bookRef,
+  spriteScenes,
   onParamChange,
   onPageCountChange,
   onRebuild,
@@ -110,6 +112,22 @@ export default function LeftPanel({
       <Checkbox label="Reduce Shadows"     value={params.reduceShadows}  onChange={(v) => onParamChange('reduceShadows', v)} />
       <Checkbox label="Reduce Sub Meshes"  value={params.reduceSubMeshes} onChange={(v) => onParamChange('reduceSubMeshes', v)} />
       <Checkbox label="Reduce Overdraw"    value={params.reduceOverdraw} onChange={(v) => onParamChange('reduceOverdraw', v)} />
+      <Checkbox
+        label="All Animated"
+        value={params.allAnimated}
+        onChange={(v) => {
+          onParamChange('allAnimated', v, false);
+          for (const ss of spriteScenes.current) ss.animated = v;
+        }}
+      />
+      <Checkbox
+        label="All Depth Scaling"
+        value={params.allDepthScaling}
+        onChange={(v) => {
+          onParamChange('allDepthScaling', v, false);
+          for (const ss of spriteScenes.current) ss.depthScaling = v;
+        }}
+      />
       <Checkbox
         label="Interactive Turning"
         value={params.interactive}

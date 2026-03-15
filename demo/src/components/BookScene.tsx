@@ -70,6 +70,8 @@ export default function BookScene({
         spriteCount: 0, // we'll add manually
         backgroundImage: cfg.backgroundImage,
         backgroundImageFit: cfg.backgroundImageFit,
+        animated: params.allAnimated,
+        depthScaling: params.allDepthScaling,
       });
 
       // Add characters

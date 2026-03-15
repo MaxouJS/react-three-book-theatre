@@ -63,6 +63,8 @@ export interface DemoParams {
   reduceShadows: boolean;
   reduceSubMeshes: boolean;
   reduceOverdraw: boolean;
+  allAnimated: boolean;
+  allDepthScaling: boolean;
   interactive: boolean;
   sunIntensity: number;
   ambientIntensity: number;
@@ -91,6 +93,8 @@ export const defaultParams: DemoParams = {
   reduceShadows: false,
   reduceSubMeshes: false,
   reduceOverdraw: false,
+  allAnimated: true,
+  allDepthScaling: true,
   interactive: true,
   sunIntensity: 1.2,
   ambientIntensity: 0.6,

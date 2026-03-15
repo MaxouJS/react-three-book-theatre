@@ -52,6 +52,10 @@ export interface SpriteSceneOptions {
   backgroundImage?: HTMLImageElement | null;
   /** How the background image is fitted (default 'cover'). */
   backgroundImageFit?: ImageFit;
+  /** Scene-wide animation override (default true).  When false, all sprites freeze. */
+  animated?: boolean;
+  /** Scene-wide depth-scaling override (default true).  When false, all items render at intrinsicSize. */
+  depthScaling?: boolean;
 }
 
 /** Options for `SpriteScene.updateSprite()`. */
@@ -101,6 +105,8 @@ export class SpriteScene {
   private _background: string;
   private _horizonY: number;
   private _pageDistance: number;
+  private _animated: boolean;
+  private _depthScaling: boolean;
   private readonly _drawables: Positionable[] = [];
 
   get horizonFraction(): number { return this._horizonY / this.height; }
@@ -126,6 +132,21 @@ export class SpriteScene {
     for (const e of this.elements) e.pageDistance = this._pageDistance;
   }
 
+  /** Scene-wide animation toggle.  When false, all sprites freeze. */
+  get animated(): boolean { return this._animated; }
+  set animated(v: boolean) {
+    this._animated = v;
+    for (const s of this.sprites) s.animated = v;
+  }
+
+  /** Scene-wide depth-scaling toggle.  When false, all items render at intrinsicSize. */
+  get depthScaling(): boolean { return this._depthScaling; }
+  set depthScaling(v: boolean) {
+    this._depthScaling = v;
+    for (const s of this.sprites)  s.depthScaling = v;
+    for (const e of this.elements) e.depthScaling = v;
+  }
+
   constructor(options?: SpriteSceneOptions) {
     const w = options?.width  ?? 512;
     const h = options?.height ?? 512;
@@ -135,6 +156,8 @@ export class SpriteScene {
     this._background        = options?.background       ?? '#e8d5b5';
     this._horizonY          = h * (options?.horizonFraction ?? 0.40);
     this._pageDistance      = Math.max(0.1, options?.pageDistance ?? 10);
+    this._animated          = options?.animated            ?? true;
+    this._depthScaling      = options?.depthScaling        ?? true;
     this.backgroundImage    = options?.backgroundImage    ?? null;
     this.backgroundImageFit = options?.backgroundImageFit ?? 'cover';
 
@@ -159,6 +182,8 @@ export class SpriteScene {
 
   addSprite(options?: SpriteOptions): Sprite {
     const s = new Sprite(this.width, this.height, this._horizonY, {
+      animated: this._animated,
+      depthScaling: this._depthScaling,
       ...options,
       pageDistance: this._pageDistance,
     });
@@ -173,6 +198,7 @@ export class SpriteScene {
 
   addElement(options?: ElementOptions): Element {
     const e = new Element(this.width, this.height, this._horizonY, {
+      depthScaling: this._depthScaling,
       ...options,
       pageDistance: this._pageDistance,
     });

@@ -87,6 +87,7 @@ export default function App() {
         params={params}
         status={status}
         bookRef={bookRef}
+        spriteScenes={spriteScenes}
         onParamChange={setParam}
         onPageCountChange={setPageCount}
         onRebuild={rebuild}
