@@ -287,6 +287,13 @@ function CharacterEditor({ index, config, maxDistance, bgColor, spriteScene, onC
           spriteScene?.updateSprite(index, { intrinsicSize: v });
         }}
       />
+      <Slider
+        label="Patrol Radius (m)" min={0} max={maxDistance} step={step} value={config.patrolRadius}
+        onChange={(v) => {
+          onChange((c) => ({ ...c, patrolRadius: v }));
+          spriteScene?.updateSprite(index, { patrolRadius: v });
+        }}
+      />
       <SimpleImageCard
         label="Idle" image={config.idleImage} bgColor={bgColor}
         onClear={() => {

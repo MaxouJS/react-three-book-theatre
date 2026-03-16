@@ -69,6 +69,7 @@ export interface SpriteUpdateOptions {
   actionImage?:   HTMLImageElement | null;
   animated?:      boolean;
   depthScaling?:  boolean;
+  patrolRadius?:  number;
 }
 
 /** Options for `SpriteScene.updateElement()`. */
@@ -225,6 +226,7 @@ export class SpriteScene {
     if (options.actionImage   !== undefined) s.actionImage   = options.actionImage;
     if (options.animated      !== undefined) s.animated      = options.animated;
     if (options.depthScaling  !== undefined) s.depthScaling  = options.depthScaling;
+    if (options.patrolRadius  !== undefined) s.patrolRadius  = options.patrolRadius;
     if (options.placement !== undefined && options.placement !== s.placement) {
       const savedDistance = s.distance;
       s.placement = options.placement;

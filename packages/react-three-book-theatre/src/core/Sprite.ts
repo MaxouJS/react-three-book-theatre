@@ -57,6 +57,8 @@ export interface SpriteOptions {
   animated?: boolean;
   /** Enable depth-based size scaling. Default true. */
   depthScaling?: boolean;
+  /** Patrol radius in metres. 0 = no movement. Default Infinity (unlimited). */
+  patrolRadius?: number;
 }
 
 // ── Palette ───────────────────────────────────────────────────────────────────
@@ -82,9 +84,21 @@ export class Sprite extends Positionable {
   /** Which direction the sprite is facing. Can be set externally. */
   facingRight = true;
 
+  /** Patrol radius in metres. 0 = no movement, Infinity = unlimited. */
+  get patrolRadius(): number { return this._patrolRadius; }
+  set patrolRadius(v: number) {
+    this._patrolRadius = v;
+    if (this._state === 'walk') this._enterWalk();
+  }
+  private _patrolRadius = Infinity;
+
   idleImage:   HTMLImageElement | null = null;
   walkImage:   HTMLImageElement | null = null;
   actionImage: HTMLImageElement | null = null;
+
+  // ── Origin (spawn position) ─────────────────────────────────────────────
+  private _originX = 0;
+  private _originR = 0;
 
   // ── State machine config ──────────────────────────────────────────────────
   private readonly _idleTimeoutMin:  number;
@@ -125,7 +139,11 @@ export class Sprite extends Positionable {
     this._actionDuration  = options?.actionDuration  ?? 0.75;
     this._walkSpeed       = options?.walkSpeed       ?? 75;
 
+    this._patrolRadius = options?.patrolRadius ?? Infinity;
+
     this._placeItem(options ?? {});
+    this._originX = this.x;
+    this._originR = this.r;
     this._enterIdle();
   }
 
@@ -160,12 +178,18 @@ export class Sprite extends Positionable {
   private _enterWalk(): void {
     this._state     = 'walk';
     this.stateTimer = 0;
-    const mx     = this.canvasW * 0.08;
-    this.targetX = mx + Math.random() * (this.canvasW - mx * 2);
-    const curR   = this.r;
-    const minR   = Math.max(0, curR - 0.5);
-    const maxR   = Math.min(1, curR + 0.5);
+    const mx = this.canvasW * 0.08;
+
+    const frac = this.patrolRadius / Math.max(0.001, this.pageDistance);
+    // Depth: constrain r within ±frac of origin
+    const minR = Math.max(0, this._originR - frac);
+    const maxR = Math.min(1, this._originR + frac);
     this.targetY = this._yFromR(minR + Math.random() * (maxR - minR));
+    // X: same fraction of canvas width
+    const radiusX = frac * this.canvasW;
+    this.targetX = Math.max(mx, Math.min(this.canvasW - mx,
+      this._originX + (Math.random() * 2 - 1) * radiusX));
+
     this.facingRight = this.targetX >= this.x;
     this._phase = 0;
   }

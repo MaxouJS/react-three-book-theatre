@@ -82,6 +82,7 @@ export default function BookScene({
           intrinsicSize: ch.intrinsicSize,
           animated: ch.animated,
           depthScaling: ch.depthScaling,
+          patrolRadius: ch.patrolRadius,
           idleImage: ch.idleImage,
           walkImage: ch.walkImage,
           actionImage: ch.actionImage,

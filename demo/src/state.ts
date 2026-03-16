@@ -19,6 +19,7 @@ export interface CharacterConfig {
   intrinsicSize: number;
   animated: boolean;
   depthScaling: boolean;
+  patrolRadius: number;
   idleImage: HTMLImageElement | null;
   walkImage: HTMLImageElement | null;
   actionImage: HTMLImageElement | null;
@@ -124,6 +125,7 @@ export const DEFAULT_CHARACTER: CharacterConfig = {
   intrinsicSize: 100,
   animated: true,
   depthScaling: true,
+  patrolRadius: 10,
   idleImage: null,
   walkImage: null,
   actionImage: null,
