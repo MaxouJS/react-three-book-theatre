@@ -26,6 +26,7 @@ export default function App() {
   const [pageConfigs, setPageConfigs] = useState<PageConfig[]>(() =>
     Array.from({ length: MAX_PAGES }, () => createDefaultPageConfig()),
   );
+  const [spreadPages, setSpreadPages] = useState<Set<number>>(() => new Set());
   const [status, setStatus] = useState('Building...');
   const [editorPage, setEditorPage] = useState(0);
   const bookRef = useRef<ThreeBook | null>(null);
@@ -69,6 +70,11 @@ export default function App() {
     // Don't rebuild — live-update the sprite scene via the updater callbacks
   }, []);
 
+  const onSpreadPagesChange = useCallback((next: Set<number>) => {
+    setSpreadPages(next);
+    setBuildKey((k) => k + 1);
+  }, []);
+
   return (
     <>
       <Canvas shadows camera={{ position: [0, 2, 5], fov: 45 }} style={{ position: 'fixed', inset: 0 }} gl={{ antialias: true }}>
@@ -76,6 +82,7 @@ export default function App() {
           params={params}
           coverSlots={coverSlots}
           pageConfigs={pageConfigs}
+          spreadPages={spreadPages}
           buildKey={buildKey}
           bookRef={bookRef}
           spriteScenes={spriteScenes}
@@ -96,16 +103,19 @@ export default function App() {
         params={params}
         coverSlots={coverSlots}
         pageConfigs={pageConfigs}
+        spreadPages={spreadPages}
         spriteScenes={spriteScenes}
         currentPage={editorPage}
         onPageChange={setEditorPage}
         onCoverSlotChange={onCoverSlotChange}
         onPageConfigChange={onPageConfigChange}
+        onSpreadPagesChange={onSpreadPagesChange}
         onRebuild={rebuild}
       />
       <PageEditor
         currentPage={editorPage}
         pageCount={params.pageCount}
+        spreadPages={spreadPages}
         spriteScenes={spriteScenes}
         onPageChange={setEditorPage}
       />

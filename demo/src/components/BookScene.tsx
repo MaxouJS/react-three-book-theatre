@@ -11,6 +11,7 @@ import {
   createPageTexture,
   SpriteSceneUpdater,
   SpriteScene,
+  SpriteSpreadScene,
 } from '@objectifthunes/react-three-book-theatre';
 import type { ThreeBook } from '@objectifthunes/react-three-book-theatre';
 import { DIRECTION_TO_BOOK_DIRECTION, type DemoParams, type ImageSlot, type PageConfig } from '../state';
@@ -30,6 +31,7 @@ interface BookSceneProps {
   params: DemoParams;
   coverSlots: ImageSlot[];
   pageConfigs: PageConfig[];
+  spreadPages: Set<number>;
   buildKey: number;
   bookRef: React.MutableRefObject<ThreeBook | null>;
   spriteScenes: React.MutableRefObject<SpriteScene[]>;
@@ -41,6 +43,7 @@ export default function BookScene({
   params,
   coverSlots,
   pageConfigs,
+  spreadPages,
   buildKey,
   bookRef,
   spriteScenes,
@@ -48,35 +51,62 @@ export default function BookScene({
   onError,
 }: BookSceneProps) {
   const orbitRef = useRef<any>(null);
+  const spreadSceneMapRef = useRef<Map<number, SpriteSpreadScene>>(new Map());
 
   // Create/recreate SpriteScenes when buildKey changes
   const scenes = useMemo(() => {
     // Dispose old scenes
-    for (const s of spriteScenes.current) s.dispose();
+    const oldSpreadInstances = new Set<SpriteScene>();
+    for (const sss of spreadSceneMapRef.current.values()) {
+      oldSpreadInstances.add(sss.scene);
+      sss.dispose();
+    }
+    spreadSceneMapRef.current = new Map();
+    for (const s of spriteScenes.current) {
+      if (!oldSpreadInstances.has(s)) s.dispose();
+    }
 
     const PAGE_BASE = 512;
     const pageCanvasW = PAGE_BASE;
     const pageCanvasH = Math.round(PAGE_BASE * params.pageHeight / params.pageWidth);
 
     const newScenes: SpriteScene[] = [];
+    const newSpreadMap = new Map<number, SpriteSpreadScene>();
+
     for (let i = 0; i < params.pageCount; i++) {
+      // Right half of a spread — reuse left page's SpriteScene
+      if (spreadPages.has(i - 1)) {
+        newScenes.push(newSpreadMap.get(i - 1)!.scene);
+        continue;
+      }
+
       const cfg = pageConfigs[i];
-      const scene = new SpriteScene({
-        width: pageCanvasW,
+      const isSpread = spreadPages.has(i);
+
+      const sceneOpts = {
         height: pageCanvasH,
         background: params.pageColor,
         horizonFraction: cfg.horizonFraction,
         pageDistance: cfg.pageDistance,
-        spriteCount: 0, // we'll add manually
+        spriteCount: 0,
         backgroundImage: cfg.backgroundImage,
         backgroundImageFit: cfg.backgroundImageFit,
         animated: params.allAnimated,
         depthScaling: params.allDepthScaling,
-      });
+      };
+
+      let ss: SpriteScene;
+      if (isSpread) {
+        const sss = new SpriteSpreadScene({ ...sceneOpts, pageWidth: pageCanvasW });
+        newSpreadMap.set(i, sss);
+        ss = sss.scene;
+      } else {
+        ss = new SpriteScene({ ...sceneOpts, width: pageCanvasW });
+      }
 
       // Add characters
       for (const ch of cfg.characters) {
-        scene.addSprite({
+        ss.addSprite({
           placement: ch.placement,
           distance: ch.distance,
           intrinsicSize: ch.intrinsicSize,
@@ -91,7 +121,7 @@ export default function BookScene({
 
       // Add elements
       for (const el of cfg.elements) {
-        scene.addElement({
+        ss.addElement({
           placement: el.placement,
           distance: el.distance,
           intrinsicSize: el.intrinsicSize,
@@ -100,9 +130,10 @@ export default function BookScene({
         });
       }
 
-      newScenes.push(scene);
+      newScenes.push(ss);
     }
 
+    spreadSceneMapRef.current = newSpreadMap;
     spriteScenes.current = newScenes;
     return newScenes;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -111,6 +142,8 @@ export default function BookScene({
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      for (const sss of spreadSceneMapRef.current.values()) sss.dispose();
+      spreadSceneMapRef.current = new Map();
       for (const s of spriteScenes.current) s.dispose();
       spriteScenes.current = [];
     };
@@ -127,8 +160,15 @@ export default function BookScene({
     }
     c.pages.length = 0;
     for (let i = 0; i < params.pageCount; i++) {
-      // Use SpriteScene texture for each page
-      c.pages.push(scenes[i].texture);
+      const spreadLeft = spreadPages.has(i) ? spreadSceneMapRef.current.get(i) : null;
+      const spreadRight = spreadPages.has(i - 1) ? spreadSceneMapRef.current.get(i - 1) : null;
+      if (spreadLeft) {
+        c.pages.push(spreadLeft.left);
+      } else if (spreadRight) {
+        c.pages.push(spreadRight.right);
+      } else {
+        c.pages.push(scenes[i].texture);
+      }
     }
     return c;
   }, [buildKey]);

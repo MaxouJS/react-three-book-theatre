@@ -3,10 +3,14 @@
  *
  * Pages are navigated one at a time (← / N →).  Each page exposes its own
  * background image, sprite count/size/horizon, and per-character controls.
+ *
+ * Spread support: eligible facing-page pairs can be toggled into a double-page
+ * spread.  When viewing a spread, the right half redirects to the spread's
+ * left page and shows shared sprite controls.
  */
 
 import { useState } from 'react';
-import { loadImage, drawImageFit } from '@objectifthunes/react-three-book-theatre';
+import { loadImage, drawImageFit, getSpreadPairs } from '@objectifthunes/react-three-book-theatre';
 import type { SpritePlacement, ImageFit, SpriteScene } from '@objectifthunes/react-three-book-theatre';
 import type {
   ImageSlot,
@@ -411,6 +415,7 @@ function ElementEditor({ index, config, maxDistance, bgColor, spriteScene, onCha
 // ── Page background card ──────────────────────────────────────────────────────
 
 interface PageBackgroundCardProps {
+  label: string;
   pageIndex: number;
   config: PageConfig;
   bgColor: string;
@@ -419,16 +424,16 @@ interface PageBackgroundCardProps {
   onRebuild: () => void;
 }
 
-function PageBackgroundCard({ pageIndex, config, bgColor, spriteScene, onChange, onRebuild }: PageBackgroundCardProps) {
+function PageBackgroundCard({ label, pageIndex, config, bgColor, spriteScene, onChange, onRebuild }: PageBackgroundCardProps) {
   const thumbSrc = renderPageThumbnail(config.backgroundImage, bgColor, config.backgroundImageFit, config.backgroundFullBleed);
 
   return (
     <div style={CARD_STYLE}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-        <img src={thumbSrc} alt={`Page ${pageIndex + 1}`} style={THUMB_STYLE} />
+        <img src={thumbSrc} alt={label} style={THUMB_STYLE} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 6, color: 'rgba(236,242,255,0.92)' }}>
-            Page {pageIndex + 1}
+            {label}
           </div>
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
             <select
@@ -489,11 +494,13 @@ interface RightPanelProps {
   params: DemoParams;
   coverSlots: ImageSlot[];
   pageConfigs: PageConfig[];
+  spreadPages: Set<number>;
   spriteScenes: React.MutableRefObject<SpriteScene[]>;
   currentPage: number;
   onPageChange: (page: number) => void;
   onCoverSlotChange: (index: number, updater: (s: ImageSlot) => ImageSlot) => void;
   onPageConfigChange: (index: number, updater: (c: PageConfig) => PageConfig) => void;
+  onSpreadPagesChange: (next: Set<number>) => void;
   onRebuild: () => void;
 }
 
@@ -501,19 +508,30 @@ export default function RightPanel({
   params,
   coverSlots,
   pageConfigs,
+  spreadPages,
   spriteScenes,
   currentPage,
   onPageChange,
   onCoverSlotChange,
   onPageConfigChange,
+  onSpreadPagesChange,
   onRebuild,
 }: RightPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
   const coverLabels = ['Front Outer', 'Front Inner', 'Back Inner', 'Back Outer'];
 
-  const pageIdx = Math.min(currentPage, params.pageCount - 1);
-  const cfg = pageConfigs[pageIdx];
-  const scene = spriteScenes.current[pageIdx] ?? null;
+  // Redirect right half of spread to its left page
+  const isRightOfSpread = spreadPages.has(currentPage - 1);
+  const effectiveIdx = isRightOfSpread ? currentPage - 1 : Math.min(currentPage, params.pageCount - 1);
+  const isSpread = spreadPages.has(effectiveIdx);
+  const cfg = pageConfigs[effectiveIdx];
+  const scene = spriteScenes.current[effectiveIdx] ?? null;
+
+  const eligibleSpreads = new Set(getSpreadPairs(params.pageCount));
+
+  const pageLabel = isSpread
+    ? `Spread ${effectiveIdx + 1}\u2013${effectiveIdx + 2}`
+    : `Page ${effectiveIdx + 1}`;
 
   return (
     <div style={{ ...PANEL_STYLE, right: 10 }}>
@@ -560,12 +578,30 @@ export default function RightPanel({
 
           {/* Page Navigation */}
           <SectionTitle text="Page" />
+
+          {/* Spread checkbox for eligible pairs */}
+          {eligibleSpreads.has(effectiveIdx) && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '0 0 8px', fontSize: 12, color: 'rgba(236,242,255,0.92)', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={isSpread}
+                style={{ width: 14, height: 14 }}
+                onChange={(e) => {
+                  const next = new Set(spreadPages);
+                  if (e.target.checked) next.add(effectiveIdx); else next.delete(effectiveIdx);
+                  onSpreadPagesChange(next);
+                }}
+              />
+              Double-page spread: Pages {effectiveIdx + 1}&ndash;{effectiveIdx + 2}
+            </label>
+          )}
+
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
             <button
               type="button"
               style={MINI_BTN}
-              disabled={pageIdx <= 0}
-              onClick={() => onPageChange(pageIdx - 1)}
+              disabled={effectiveIdx <= 0}
+              onClick={() => onPageChange(effectiveIdx - 1)}
             >
               ←
             </button>
@@ -573,7 +609,7 @@ export default function RightPanel({
               type="number"
               min={1}
               max={params.pageCount}
-              value={pageIdx + 1}
+              value={effectiveIdx + 1}
               style={{ ...MINI_SELECT, width: 42, textAlign: 'center' }}
               onChange={(e) => {
                 const v = Math.max(1, Math.min(params.pageCount, parseInt(e.target.value, 10) || 1)) - 1;
@@ -583,11 +619,16 @@ export default function RightPanel({
             <span style={{ fontSize: 12, color: 'rgba(236,242,255,0.7)' }}>
               / {params.pageCount}
             </span>
+            {isSpread && (
+              <span style={{ fontSize: 11, color: 'rgba(137,216,176,0.85)' }}>
+                (Spread {effectiveIdx + 1}&ndash;{effectiveIdx + 2})
+              </span>
+            )}
             <button
               type="button"
               style={MINI_BTN}
-              disabled={pageIdx >= params.pageCount - 1}
-              onClick={() => onPageChange(pageIdx + 1)}
+              disabled={effectiveIdx >= params.pageCount - 1}
+              onClick={() => onPageChange(effectiveIdx + 1)}
             >
               →
             </button>
@@ -595,11 +636,12 @@ export default function RightPanel({
 
           {/* Page background card */}
           <PageBackgroundCard
-            pageIndex={pageIdx}
+            label={pageLabel}
+            pageIndex={effectiveIdx}
             config={cfg}
             bgColor={params.pageColor}
             spriteScene={scene}
-            onChange={(updater) => onPageConfigChange(pageIdx, updater)}
+            onChange={(updater) => onPageConfigChange(effectiveIdx, updater)}
             onRebuild={onRebuild}
           />
 
@@ -608,14 +650,14 @@ export default function RightPanel({
           <Slider
             label="Horizon" min={0} max={1} step={0.01} value={cfg.horizonFraction}
             onChange={(v) => {
-              onPageConfigChange(pageIdx, (c) => ({ ...c, horizonFraction: v }));
+              onPageConfigChange(effectiveIdx, (c) => ({ ...c, horizonFraction: v }));
               if (scene) scene.horizonFraction = v;
             }}
           />
           <Slider
             label="Scene Depth (m)" min={1} max={200} step={1} value={cfg.pageDistance}
             onChange={(v) => {
-              onPageConfigChange(pageIdx, (c) => ({ ...c, pageDistance: v }));
+              onPageConfigChange(effectiveIdx, (c) => ({ ...c, pageDistance: v }));
               if (scene) scene.pageDistance = v;
             }}
           />
@@ -630,7 +672,7 @@ export default function RightPanel({
               bgColor={cfg.background}
               spriteScene={scene}
               onChange={(updater) => {
-                onPageConfigChange(pageIdx, (c) => {
+                onPageConfigChange(effectiveIdx, (c) => {
                   const chars = [...c.characters];
                   chars[chIdx] = updater(chars[chIdx]);
                   return { ...c, characters: chars };
@@ -650,7 +692,7 @@ export default function RightPanel({
               bgColor={cfg.background}
               spriteScene={scene}
               onChange={(updater) => {
-                onPageConfigChange(pageIdx, (c) => {
+                onPageConfigChange(effectiveIdx, (c) => {
                   const els = [...c.elements];
                   els[elIdx] = updater(els[elIdx]);
                   return { ...c, elements: els };
@@ -661,7 +703,7 @@ export default function RightPanel({
                   const spriteEl = scene.elements[elIdx];
                   if (spriteEl) scene.removeElement(spriteEl);
                 }
-                onPageConfigChange(pageIdx, (c) => ({
+                onPageConfigChange(effectiveIdx, (c) => ({
                   ...c,
                   elements: c.elements.filter((_, i) => i !== elIdx),
                 }));
@@ -673,7 +715,7 @@ export default function RightPanel({
             type="button"
             style={{ ...MINI_BTN, width: '100%', marginTop: 4 }}
             onClick={() => {
-              onPageConfigChange(pageIdx, (c) => ({
+              onPageConfigChange(effectiveIdx, (c) => ({
                 ...c,
                 elements: [...c.elements, { ...DEFAULT_ELEMENT }],
               }));

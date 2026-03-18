@@ -39,6 +39,9 @@ export type { ElementOptions } from './core/Element';
 export { SpriteScene } from './core/SpriteScene';
 export type { SpriteSceneOptions, SpriteUpdateOptions, ElementUpdateOptions } from './core/SpriteScene';
 
+export { SpriteSpreadScene } from './core/SpriteSpreadScene';
+export type { SpriteSpreadSceneOptions, SpreadHalf } from './core/SpriteSpreadScene';
+
 export { groundR, skyR, depthScale, renderedSize } from './core/perspective';
 
 // ── Re-export: react-three-book (full API) ──────────────────────────────────
@@ -95,6 +98,8 @@ export {
   PaperMeshDataPool,
   PageContent,
   SpritePageContent2,
+  SpreadContent,
+  getSpreadPairs,
 } from '@objectifthunes/react-three-book';
 
 export type {
@@ -112,4 +117,5 @@ export type {
   PaperSetupInit,
   Keyframe,
   IPageContent,
+  SpreadContentOptions,
 } from '@objectifthunes/react-three-book';

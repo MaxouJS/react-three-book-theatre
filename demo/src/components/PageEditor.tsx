@@ -4,6 +4,9 @@
  * Shows the current page's SpriteScene canvas in a floating panel.
  *   - Drag    → move character (x + y / depth simultaneously)
  *   - Scroll  → resize (intrinsicSize)
+ *
+ * Spread support: when the current page is part of a double-page spread, the
+ * editor shows the full double-width canvas with a centre fold line.
  */
 
 import { useRef, useEffect, useCallback, useState } from 'react';
@@ -15,11 +18,12 @@ const DISPLAY_MAX = 300;
 interface PageEditorProps {
   currentPage: number;
   pageCount: number;
+  spreadPages: Set<number>;
   spriteScenes: React.MutableRefObject<SpriteScene[]>;
   onPageChange: (page: number) => void;
 }
 
-export default function PageEditor({ currentPage, pageCount, spriteScenes, onPageChange }: PageEditorProps) {
+export default function PageEditor({ currentPage, pageCount, spreadPages, spriteScenes, onPageChange }: PageEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
   const draggingRef = useRef<Positionable | null>(null);
@@ -28,7 +32,12 @@ export default function PageEditor({ currentPage, pageCount, spriteScenes, onPag
   const itemOriginRef = useRef({ x: 0, y: 0 });
   const [collapsed, setCollapsed] = useState(false);
 
-  const getScene = useCallback(() => spriteScenes.current[currentPage] ?? null, [spriteScenes, currentPage]);
+  // Redirect right half of spread to its left page
+  const isRightOfSpread = spreadPages.has(currentPage - 1);
+  const effectiveIdx = isRightOfSpread ? currentPage - 1 : currentPage;
+  const isSpread = spreadPages.has(effectiveIdx) || isRightOfSpread;
+
+  const getScene = useCallback(() => spriteScenes.current[effectiveIdx] ?? null, [spriteScenes, effectiveIdx]);
 
   const getDisplayMetrics = useCallback(() => {
     const ss = getScene();
@@ -85,6 +94,20 @@ export default function PageEditor({ currentPage, pageCount, spriteScenes, onPag
         ctx.fillRect(0, 0, dw, dh);
       }
 
+      // Centre fold line for spread pages
+      if (isSpread && ss) {
+        const foldX = dw / 2;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(236,242,255,0.35)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(foldX, 0);
+        ctx.lineTo(foldX, dh);
+        ctx.stroke();
+        ctx.restore();
+      }
+
       // Draw item overlays
       const items = allItems();
       const hovered = hoveredRef.current;
@@ -97,11 +120,11 @@ export default function PageEditor({ currentPage, pageCount, spriteScenes, onPag
         const sw = sz * scale;
         const sy = top * scale;
         const active = item === hovered || item === dragging;
-        const isSprite = item instanceof Sprite;
+        const isSpriteType = item instanceof Sprite;
 
         ctx.save();
         ctx.strokeStyle = active
-          ? (isSprite ? '#89d8b0' : '#d8b089')
+          ? (isSpriteType ? '#89d8b0' : '#d8b089')
           : 'rgba(236,242,255,0.45)';
         ctx.lineWidth = active ? 2 : 1;
         if (!active) ctx.setLineDash([3, 3]);
@@ -114,9 +137,9 @@ export default function PageEditor({ currentPage, pageCount, spriteScenes, onPag
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
         ctx.fillStyle = active
-          ? (isSprite ? '#89d8b0' : '#d8b089')
+          ? (isSpriteType ? '#89d8b0' : '#d8b089')
           : 'rgba(236,242,255,0.6)';
-        ctx.fillText(isSprite ? 'S' : 'E', sx - sw / 2 + 3, sy + 3);
+        ctx.fillText(isSpriteType ? 'S' : 'E', sx - sw / 2 + 3, sy + 3);
         ctx.restore();
       }
 
@@ -125,7 +148,7 @@ export default function PageEditor({ currentPage, pageCount, spriteScenes, onPag
 
     rafRef.current = requestAnimationFrame(render);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [currentPage, collapsed, getScene, getDisplayMetrics, allItems, computeItemBox]);
+  }, [effectiveIdx, isSpread, collapsed, getScene, getDisplayMetrics, allItems, computeItemBox]);
 
   const displayToCanvas = useCallback((clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
@@ -181,6 +204,10 @@ export default function PageEditor({ currentPage, pageCount, spriteScenes, onPag
     hit.intrinsicSize = Math.max(1, Math.min(200, hit.intrinsicSize + (e.deltaY > 0 ? -5 : 5)));
   }, [displayToCanvas, hitTest]);
 
+  const displayLabel = isSpread
+    ? `Spread ${effectiveIdx + 1}\u2013${effectiveIdx + 2}`
+    : `Page ${effectiveIdx + 1}`;
+
   return (
     <div
       style={{
@@ -231,18 +258,18 @@ export default function PageEditor({ currentPage, pageCount, spriteScenes, onPag
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 }}>
           <button
             style={NAV_BTN}
-            onClick={() => onPageChange(Math.max(0, currentPage - 1))}
-            disabled={currentPage <= 0}
+            onClick={() => onPageChange(Math.max(0, effectiveIdx - 1))}
+            disabled={effectiveIdx <= 0}
           >
             ←
           </button>
           <span style={{ fontSize: 12, color: 'rgba(236,242,255,0.85)', minWidth: 60, textAlign: 'center' }}>
-            Page {currentPage + 1} / {pageCount}
+            {displayLabel} / {pageCount}
           </span>
           <button
             style={NAV_BTN}
-            onClick={() => onPageChange(Math.min(pageCount - 1, currentPage + 1))}
-            disabled={currentPage >= pageCount - 1}
+            onClick={() => onPageChange(Math.min(pageCount - 1, effectiveIdx + 1))}
+            disabled={effectiveIdx >= pageCount - 1}
           >
             →
           </button>

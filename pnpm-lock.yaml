@@ -15,8 +15,8 @@ importers:
   demo:
     dependencies:
       '@objectifthunes/react-three-book':
-        specifier: ^0.1.0
-        version: 0.1.1(@react-three/fiber@8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.172.0))(react@18.3.1)(three@0.172.0)
+        specifier: ^0.2.2
+        version: 0.2.2(@react-three/fiber@8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.172.0))(react@18.3.1)(three@0.172.0)
       '@objectifthunes/react-three-book-theatre':
         specifier: workspace:*
         version: link:../packages/react-three-book-theatre
@@ -58,8 +58,8 @@ importers:
   packages/react-three-book-theatre:
     devDependencies:
       '@objectifthunes/react-three-book':
-        specifier: ^0.1.0
-        version: 0.1.1(@react-three/fiber@8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.172.0))(react@18.3.1)(three@0.172.0)
+        specifier: ^0.2.2
+        version: 0.2.2(@react-three/fiber@8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.172.0))(react@18.3.1)(three@0.172.0)
       '@react-three/fiber':
         specifier: ^8.17.0
         version: 8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.172.0)
@@ -367,8 +367,8 @@ packages:
     peerDependencies:
       three: '>= 0.159.0'
 
-  '@objectifthunes/react-three-book@0.1.1':
-    resolution: {integrity: sha512-a36XkqUPZ2abeQPOzMgKwPwvzWM7zEdrLdAOObt16Vh1ui+RpTx1SfKKXHlAp/0y9/yghuIscrVS8pAuW3xQrg==}
+  '@objectifthunes/react-three-book@0.2.2':
+    resolution: {integrity: sha512-LIaYOarrgKaP9qzg7qU7rr8UtqZ/oL+XQgjvZHIwEzblPDnDbw4mw2BdOjPoAxqqLWrzinFUMFuaFyGb2AUrrQ==}
     peerDependencies:
       '@react-three/fiber': '>=8.0.0'
       react: '>=18.0.0'
@@ -1624,7 +1624,7 @@ snapshots:
       promise-worker-transferable: 1.0.4
       three: 0.172.0
 
-  '@objectifthunes/react-three-book@0.1.1(@react-three/fiber@8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.172.0))(react@18.3.1)(three@0.172.0)':
+  '@objectifthunes/react-three-book@0.2.2(@react-three/fiber@8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.172.0))(react@18.3.1)(three@0.172.0)':
     dependencies:
       '@react-three/fiber': 8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.172.0)
       react: 18.3.1

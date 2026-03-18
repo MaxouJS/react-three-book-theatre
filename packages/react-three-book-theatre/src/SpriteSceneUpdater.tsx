@@ -24,12 +24,18 @@ export interface SpriteSceneUpdaterProps {
 
 /**
  * Renders nothing.  Calls `scene.update(dt, book)` for each scene every frame.
+ *
+ * Deduplicates scene references so spread pages that share a single
+ * SpriteScene are only updated once per frame.
  */
 export function SpriteSceneUpdater({ scenes }: SpriteSceneUpdaterProps) {
   const book = useBook();
 
   useFrame((_, delta) => {
+    const seen = new Set<SpriteScene>();
     for (const scene of scenes) {
+      if (seen.has(scene)) continue;
+      seen.add(scene);
       scene.update(delta, book ?? undefined);
     }
   });
