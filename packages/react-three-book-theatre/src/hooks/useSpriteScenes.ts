@@ -1,8 +1,10 @@
 /**
  * useSpriteScenes — creates an array of SpriteScene instances (one per page).
  *
- * The array length is fixed at creation time.  If you need to change it,
- * remount with a different `key`.
+ * The array length adjusts dynamically when `count` changes:
+ *   - Existing scenes are preserved (no state reset)
+ *   - New scenes are appended as needed
+ *   - Excess scenes are disposed
  */
 
 import { useEffect, useRef } from 'react';
@@ -13,18 +15,30 @@ export function useSpriteScenes(
   count: number,
   options?: SpriteSceneOptions,
 ): SpriteScene[] {
-  const ref = useRef<SpriteScene[] | null>(null);
+  const ref = useRef<SpriteScene[]>([]);
+  const prevCountRef = useRef(0);
 
-  if (!ref.current) {
-    ref.current = Array.from({ length: count }, () => new SpriteScene(options));
+  if (count !== prevCountRef.current) {
+    const old = ref.current;
+    const next: SpriteScene[] = [];
+
+    for (let i = 0; i < count; i++) {
+      next.push(i < old.length ? old[i] : new SpriteScene(options));
+    }
+
+    // Dispose removed scenes
+    for (let i = count; i < old.length; i++) {
+      old[i].dispose();
+    }
+
+    ref.current = next;
+    prevCountRef.current = count;
   }
 
   useEffect(() => {
     return () => {
-      if (ref.current) {
-        for (const scene of ref.current) scene.dispose();
-        ref.current = null;
-      }
+      for (const scene of ref.current) scene.dispose();
+      ref.current = [];
     };
   }, []);
 

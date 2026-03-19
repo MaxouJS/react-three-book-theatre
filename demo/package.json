@@ -7,7 +7,7 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@objectifthunes/react-three-book": "^0.2.2",
+    "@objectifthunes/react-three-book": "^0.3.0",
     "@objectifthunes/react-three-book-theatre": "workspace:*",
     "@react-three/drei": "^9.115.0",
     "@react-three/fiber": "^8.17.0",
