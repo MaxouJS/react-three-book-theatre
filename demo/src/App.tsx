@@ -58,7 +58,6 @@ export default function App() {
 
   const onCoverSlotChange = useCallback((i: number, updater: (s: ImageSlot) => ImageSlot) => {
     setCoverSlots((prev) => { const next = [...prev]; next[i] = updater(next[i]); return next; });
-    setBuildKey((k) => k + 1);
   }, []);
 
   const onPageConfigChange = useCallback((i: number, updater: (c: PageConfig) => PageConfig) => {

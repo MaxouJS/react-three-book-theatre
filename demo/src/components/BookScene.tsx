@@ -171,9 +171,9 @@ export default function BookScene({
       }
     }
     return c;
-  }, [buildKey]);
+  }, [scenes, params.direction, params.coverColor, coverSlots, params.pageCount, spreadPages]);
 
-  const binding = useMemo(() => new StapleBookBinding(), [buildKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const binding = useMemo(() => new StapleBookBinding(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
