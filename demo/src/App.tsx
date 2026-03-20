@@ -19,7 +19,7 @@ const MAX_PAGES = 40;
 
 export default function App() {
   const [params, setParams] = useState<DemoParams>(defaultParams);
-  const [buildKey, setBuildKey] = useState(0);
+  const [sceneKey, setSceneKey] = useState(0);
   const [coverSlots, setCoverSlots] = useState<ImageSlot[]>(() =>
     Array.from({ length: 4 }, () => ({ ...EMPTY_SLOT })),
   );
@@ -32,11 +32,12 @@ export default function App() {
   const bookRef = useRef<ThreeBook | null>(null);
   const spriteScenes = useRef<SpriteScene[]>([]);
 
-  const rebuild = useCallback(() => setBuildKey((k) => k + 1), []);
+  const rebuildScenes = useCallback(() => setSceneKey((k) => k + 1), []);
 
-  const setParam = useCallback(<K extends keyof DemoParams>(key: K, value: DemoParams[K], doRebuild = true) => {
+  const forceRebuild = useCallback(() => setSceneKey((k) => k + 1), []);
+
+  const setParam = useCallback(<K extends keyof DemoParams>(key: K, value: DemoParams[K]) => {
     setParams((prev) => ({ ...prev, [key]: value }));
-    if (doRebuild) setBuildKey((k) => k + 1);
   }, []);
 
   const setPageCount = useCallback((count: number) => {
@@ -46,7 +47,6 @@ export default function App() {
       if (prev.length >= count) return prev;
       return [...prev, ...Array.from({ length: count - prev.length }, () => createDefaultPageConfig())];
     });
-    setBuildKey((k) => k + 1);
   }, []);
 
   const onBuilt = useCallback((book: ThreeBook) => {
@@ -71,7 +71,6 @@ export default function App() {
 
   const onSpreadPagesChange = useCallback((next: Set<number>) => {
     setSpreadPages(next);
-    setBuildKey((k) => k + 1);
   }, []);
 
   return (
@@ -82,7 +81,7 @@ export default function App() {
           coverSlots={coverSlots}
           pageConfigs={pageConfigs}
           spreadPages={spreadPages}
-          buildKey={buildKey}
+          sceneKey={sceneKey}
           bookRef={bookRef}
           spriteScenes={spriteScenes}
           onBuilt={onBuilt}
@@ -96,7 +95,7 @@ export default function App() {
         spriteScenes={spriteScenes}
         onParamChange={setParam}
         onPageCountChange={setPageCount}
-        onRebuild={rebuild}
+        onRebuild={forceRebuild}
       />
       <RightPanel
         params={params}
@@ -109,7 +108,7 @@ export default function App() {
         onCoverSlotChange={onCoverSlotChange}
         onPageConfigChange={onPageConfigChange}
         onSpreadPagesChange={onSpreadPagesChange}
-        onRebuild={rebuild}
+        onRebuild={rebuildScenes}
       />
       <PageEditor
         currentPage={editorPage}

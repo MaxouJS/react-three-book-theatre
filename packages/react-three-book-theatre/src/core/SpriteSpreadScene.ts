@@ -75,6 +75,11 @@ export class SpriteSpreadScene {
     this.right = new SpreadHalfContent(this.scene.texture, 'right');
   }
 
+  /** Resize both halves.  pageWidth is the single-page width; canvas becomes 2×. */
+  resize(pageWidth: number, height: number): void {
+    this.scene.resize(pageWidth * 2, height);
+  }
+
   /**
    * Tick sprite animations and sync textures.
    * @param dt   Delta time in seconds.

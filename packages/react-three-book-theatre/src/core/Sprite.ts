@@ -147,6 +147,19 @@ export class Sprite extends Positionable {
     this._enterIdle();
   }
 
+  /** Resize: scale origin and walk targets proportionally, preserve state. */
+  override _resize(newW: number, newH: number, newHorizonY: number): void {
+    const xScale = this.canvasW > 0 ? newW / this.canvasW : 1;
+    this._originX *= xScale;
+    this.targetX  *= xScale;
+    // targetY is in canvas coords — convert to r, resize, convert back
+    const targetR = this.placement === 'ground'
+      ? (this.canvasH - this.targetY) / Math.max(1, this.canvasH - this.horizonY)
+      : this.targetY / Math.max(1, this.horizonY);
+    super._resize(newW, newH, newHorizonY);
+    this.targetY = this._yFromR(Math.max(0, Math.min(1, targetR)));
+  }
+
   // ── Public state triggers ─────────────────────────────────────────────────
 
   /** Force an immediate transition to idle. */

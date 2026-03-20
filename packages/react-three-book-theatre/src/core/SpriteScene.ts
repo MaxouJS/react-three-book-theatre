@@ -101,8 +101,8 @@ export class SpriteScene {
   backgroundImageFit: ImageFit;
 
   private readonly ctx: CanvasRenderingContext2D;
-  private readonly width: number;
-  private readonly height: number;
+  private width: number;
+  private height: number;
   private _background: string;
   private _horizonY: number;
   private _pageDistance: number;
@@ -177,6 +177,25 @@ export class SpriteScene {
     for (let i = 0; i < count; i++) this.addSprite();
 
     this._render();
+  }
+
+  /**
+   * Resize the canvas.  All sprites and elements are scaled proportionally —
+   * positions, origins, and walk targets adapt to the new coordinate space.
+   * Animation state (idle/walk/action timers, facing direction) is preserved.
+   * The same canvas element and CanvasTexture identity are kept, so existing
+   * three-book material references remain valid.
+   */
+  resize(newWidth: number, newHeight: number): void {
+    if (newWidth === this.width && newHeight === this.height) return;
+    const fraction = this._horizonY / (this.height || 1);
+    this.width  = newWidth;
+    this.height = newHeight;
+    this.canvas.width  = newWidth;
+    this.canvas.height = newHeight;
+    this._horizonY = newHeight * Math.max(0, Math.min(1, fraction));
+    for (const s of this.sprites)  s._resize(newWidth, newHeight, this._horizonY);
+    for (const e of this.elements) e._resize(newWidth, newHeight, this._horizonY);
   }
 
   // ── Public API ────────────────────────────────────────────────────────────

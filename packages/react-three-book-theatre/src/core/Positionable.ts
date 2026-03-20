@@ -23,8 +23,8 @@ export abstract class Positionable {
   /** When false, rendered size equals intrinsicSize regardless of depth (default true). */
   depthScaling:  boolean;
 
-  protected readonly canvasW: number;
-  protected readonly canvasH: number;
+  protected canvasW: number;
+  protected canvasH: number;
 
   constructor(
     canvasWidth:   number,
@@ -82,6 +82,20 @@ export abstract class Positionable {
     }
     const margin = this.canvasW * 0.1;
     this.x = options.x ?? margin + Math.random() * (this.canvasW - margin * 2);
+  }
+
+  /**
+   * Resize: scale x proportionally, preserve depth (r) in new coordinate space.
+   * Subclasses override to also scale origin, walk targets, etc.
+   */
+  _resize(newW: number, newH: number, newHorizonY: number): void {
+    const savedR = this.r;
+    const xFrac  = this.canvasW > 0 ? this.x / this.canvasW : 0.5;
+    this.canvasW  = newW;
+    this.canvasH  = newH;
+    this.horizonY = newHorizonY;
+    this.x = xFrac * newW;
+    this.y = this._yFromR(savedR);
   }
 
   abstract draw(ctx: CanvasRenderingContext2D): void;

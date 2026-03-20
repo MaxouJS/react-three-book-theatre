@@ -5,6 +5,9 @@
  *   - Existing scenes are preserved (no state reset)
  *   - New scenes are appended as needed
  *   - Excess scenes are disposed
+ *
+ * Options are reactive: dimension changes call `scene.resize()` on all
+ * existing scenes, other property changes apply via live setters.
  */
 
 import { useEffect, useRef } from 'react';
@@ -33,6 +36,24 @@ export function useSpriteScenes(
 
     ref.current = next;
     prevCountRef.current = count;
+  }
+
+  // Apply reactive options (resize + live setters) to all existing scenes
+  if (options) {
+    const w = options.width  ?? 512;
+    const h = options.height ?? 512;
+    for (const scene of ref.current) {
+      if (w !== scene.canvas.width || h !== scene.canvas.height) {
+        scene.resize(w, h);
+      }
+      if (options.background       !== undefined) scene.background       = options.background;
+      if (options.horizonFraction   !== undefined) scene.horizonFraction   = options.horizonFraction;
+      if (options.pageDistance      !== undefined) scene.pageDistance      = options.pageDistance;
+      if (options.animated          !== undefined) scene.animated          = options.animated;
+      if (options.depthScaling      !== undefined) scene.depthScaling      = options.depthScaling;
+      if (options.backgroundImage   !== undefined) scene.backgroundImage   = options.backgroundImage;
+      if (options.backgroundImageFit !== undefined) scene.backgroundImageFit = options.backgroundImageFit;
+    }
   }
 
   useEffect(() => {

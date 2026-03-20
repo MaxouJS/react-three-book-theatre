@@ -32,7 +32,7 @@ interface BookSceneProps {
   coverSlots: ImageSlot[];
   pageConfigs: PageConfig[];
   spreadPages: Set<number>;
-  buildKey: number;
+  sceneKey: number;
   bookRef: React.MutableRefObject<ThreeBook | null>;
   spriteScenes: React.MutableRefObject<SpriteScene[]>;
   onBuilt: (book: ThreeBook) => void;
@@ -44,7 +44,7 @@ export default function BookScene({
   coverSlots,
   pageConfigs,
   spreadPages,
-  buildKey,
+  sceneKey,
   bookRef,
   spriteScenes,
   onBuilt,
@@ -53,7 +53,7 @@ export default function BookScene({
   const orbitRef = useRef<any>(null);
   const spreadSceneMapRef = useRef<Map<number, SpriteSpreadScene>>(new Map());
 
-  // Create/recreate SpriteScenes when buildKey changes
+  // Create/recreate SpriteScenes when count, spreads, or sceneKey change
   const scenes = useMemo(() => {
     // Dispose old scenes
     const oldSpreadInstances = new Set<SpriteScene>();
@@ -137,7 +137,22 @@ export default function BookScene({
     spriteScenes.current = newScenes;
     return newScenes;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buildKey]);
+  }, [sceneKey, params.pageCount, spreadPages]);
+
+  // Resize SpriteScenes during render — cheap math only (no canvas render).
+  {
+    const PAGE_BASE = 512;
+    const newW = PAGE_BASE;
+    const newH = Math.round(PAGE_BASE * params.pageHeight / params.pageWidth);
+    for (const sss of spreadSceneMapRef.current.values()) {
+      sss.resize(newW, newH);
+    }
+    const spreadSSSet = new Set<SpriteScene>();
+    for (const sss of spreadSceneMapRef.current.values()) spreadSSSet.add(sss.scene);
+    for (const ss of scenes) {
+      if (!spreadSSSet.has(ss)) ss.resize(newW, newH);
+    }
+  }
 
   // Cleanup on unmount
   useEffect(() => {
@@ -187,7 +202,7 @@ export default function BookScene({
       <OrbitControls ref={orbitRef} enableDamping dampingFactor={0.05} target={[0, 0.5, 0]} />
       <DemoExposer orbitRef={orbitRef} bookRef={bookRef} />
       <Book
-        key={buildKey} ref={bookRef} content={content} binding={binding}
+        ref={bookRef} content={content} binding={binding}
         initialOpenProgress={params.openProgress} castShadows={params.castShadows}
         alignToGround={params.alignToGround} hideBinder={params.hideBinder}
         reduceShadows={params.reduceShadows} reduceSubMeshes={params.reduceSubMeshes} reduceOverdraw={params.reduceOverdraw}
