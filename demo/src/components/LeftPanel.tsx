@@ -1,8 +1,7 @@
-import { useState, type RefObject } from 'react';
+import type { RefObject } from 'react';
 import type { ThreeBook, SpriteScene } from '@objectifthunes/react-three-book-theatre';
 import type { DemoParams, DirectionOption } from '../state';
 import {
-  PANEL_STYLE,
   SectionTitle,
   Slider,
   ColorPicker,
@@ -12,7 +11,6 @@ import {
 
 interface LeftPanelProps {
   params: DemoParams;
-  status: string;
   bookRef: RefObject<ThreeBook | null>;
   spriteScenes: React.MutableRefObject<SpriteScene[]>;
   onParamChange: <K extends keyof DemoParams>(key: K, value: DemoParams[K], rebuild?: boolean) => void;
@@ -22,41 +20,14 @@ interface LeftPanelProps {
 
 export default function LeftPanel({
   params,
-  status,
   bookRef,
   spriteScenes,
   onParamChange,
   onPageCountChange,
   onRebuild,
 }: LeftPanelProps) {
-  const [collapsed, setCollapsed] = useState(false);
-
   return (
-    <div style={{ ...PANEL_STYLE, left: 10 }}>
-      <div style={{ marginBottom: 10 }}>
-        <h1
-          style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, position: 'relative', cursor: 'pointer' }}
-          onClick={() => setCollapsed((c) => !c)}
-        >
-          react-three-book-theatre
-          <span style={{
-            position: 'absolute', top: 0, right: 0, width: 22, height: 22, padding: 0,
-            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(236,242,255,0.15)',
-            borderRadius: 6, color: 'rgba(236,242,255,0.68)', fontSize: 11, lineHeight: '22px',
-            textAlign: 'center', display: 'inline-block',
-          }}>
-            {collapsed ? '\u25B8' : '\u25BE'}
-          </span>
-        </h1>
-        <p style={{ margin: '0 0 6px', color: 'rgba(236, 242, 255, 0.82)', fontSize: 12 }}>
-          Drag pages to turn. Orbit: right-click + wheel.
-        </p>
-        <div style={{ color: '#8cf0bf', fontWeight: 700, fontSize: 12 }}>
-          {status}
-        </div>
-      </div>
-
-      {collapsed ? null : <>
+    <>
       {/* Page Paper */}
       <SectionTitle text="Page Paper" />
 
@@ -164,7 +135,6 @@ export default function LeftPanel({
       <Slider label="Sun X"             min={-12} max={12} step={0.1} value={params.sunX}             onChange={(v) => onParamChange('sunX', v, false)} />
       <Slider label="Sun Y"             min={1}   max={20} step={0.1} value={params.sunY}             onChange={(v) => onParamChange('sunY', v, false)} />
       <Slider label="Sun Z"             min={-12} max={12} step={0.1} value={params.sunZ}             onChange={(v) => onParamChange('sunZ', v, false)} />
-      </>}
-    </div>
+    </>
   );
 }

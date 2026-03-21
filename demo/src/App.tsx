@@ -10,12 +10,39 @@ import {
   type ImageSlot,
   type PageConfig,
 } from './state';
+import { PANEL_STYLE } from './components/UiHelpers';
 import BookScene from './components/BookScene';
 import LeftPanel from './components/LeftPanel';
 import RightPanel from './components/RightPanel';
 import PageEditor from './components/PageEditor';
 
 const MAX_PAGES = 40;
+
+type Tab = 'book' | 'textures' | 'editor';
+
+const TAB_BTN: React.CSSProperties = {
+  flex: 1, padding: '6px 0', border: '1px solid rgba(236,242,255,0.15)',
+  borderRadius: 8, background: 'rgba(255,255,255,0.04)',
+  color: 'rgba(236,242,255,0.55)', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+};
+
+const TAB_BTN_ACTIVE: React.CSSProperties = {
+  ...TAB_BTN, background: 'rgba(137,216,176,0.18)', color: '#89d8b0', borderColor: 'rgba(137,216,176,0.35)',
+};
+
+const TOGGLE_BTN: React.CSSProperties = {
+  position: 'fixed', top: 14, left: 14, zIndex: 10, padding: '8px 14px',
+  borderRadius: 10, border: '1px solid rgba(236,242,255,0.2)',
+  background: 'rgba(8, 10, 18, 0.7)', backdropFilter: 'blur(8px)', color: '#ecf2ff',
+  fontFamily: "'Avenir Next', 'Trebuchet MS', 'Segoe UI', sans-serif",
+  fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
+};
+
+const CLOSE_BTN: React.CSSProperties = {
+  padding: '4px 8px', border: '1px solid rgba(236,242,255,0.15)', borderRadius: 6,
+  background: 'rgba(255,255,255,0.04)', color: 'rgba(236,242,255,0.5)',
+  fontFamily: 'inherit', fontSize: 14, cursor: 'pointer', lineHeight: 1,
+};
 
 export default function App() {
   const [params, setParams] = useState<DemoParams>(defaultParams);
@@ -29,6 +56,8 @@ export default function App() {
   const [spreadPages, setSpreadPages] = useState<Set<number>>(() => new Set());
   const [status, setStatus] = useState('Building...');
   const [editorPage, setEditorPage] = useState(0);
+  const [activeTab, setActiveTab] = useState<Tab>('book');
+  const [panelOpen, setPanelOpen] = useState(true);
   const bookRef = useRef<ThreeBook | null>(null);
   const spriteScenes = useRef<SpriteScene[]>([]);
 
@@ -88,47 +117,76 @@ export default function App() {
           onError={onError}
         />
       </Canvas>
-      <LeftPanel
-        params={params}
-        status={status}
-        bookRef={bookRef}
-        spriteScenes={spriteScenes}
-        onParamChange={setParam}
-        onPageCountChange={setPageCount}
-        onRebuild={forceRebuild}
-      />
-      <RightPanel
-        params={params}
-        coverSlots={coverSlots}
-        pageConfigs={pageConfigs}
-        spreadPages={spreadPages}
-        spriteScenes={spriteScenes}
-        currentPage={editorPage}
-        onPageChange={setEditorPage}
-        onCoverSlotChange={onCoverSlotChange}
-        onPageConfigChange={onPageConfigChange}
-        onSpreadPagesChange={onSpreadPagesChange}
-        onRebuild={rebuildScenes}
-      />
-      <PageEditor
-        currentPage={editorPage}
-        pageCount={params.pageCount}
-        spreadPages={spreadPages}
-        spriteScenes={spriteScenes}
-        onPageChange={setEditorPage}
-      />
-      <div style={{
-        position: 'fixed',
-        bottom: 10,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        color: '#9aa3bf',
-        fontFamily: 'monospace',
-        fontSize: 12,
-        pointerEvents: 'none',
-      }}>
-        Click + drag pages to turn  |  Orbit: right-click / scroll
-      </div>
+
+      {panelOpen ? (
+        <div
+          style={{ ...PANEL_STYLE, left: 10, width: 'min(92vw, 380px)' }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+            <div>
+              <h1 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>react-three-book-theatre</h1>
+              <p style={{ margin: '3px 0 0', color: 'rgba(236,242,255,0.55)', fontSize: 11 }}>
+                Drag to turn · right-click + wheel to orbit
+              </p>
+            </div>
+            <button style={CLOSE_BTN} onClick={() => setPanelOpen(false)} title="Hide panel">{'\u2715'}</button>
+          </div>
+          <div style={{ marginBottom: 8, color: '#8cf0bf', fontWeight: 700, fontSize: 12 }}>{status}</div>
+
+          {/* Tab bar */}
+          <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
+            {(['book', 'textures', 'editor'] as Tab[]).map((tab) => (
+              <button
+                key={tab}
+                style={activeTab === tab ? TAB_BTN_ACTIVE : TAB_BTN}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab === 'book' ? 'Book' : tab === 'textures' ? 'Textures' : 'Editor'}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab content */}
+          <div style={{ display: activeTab === 'book' ? 'block' : 'none' }}>
+            <LeftPanel
+              params={params}
+              bookRef={bookRef}
+              spriteScenes={spriteScenes}
+              onParamChange={setParam}
+              onPageCountChange={setPageCount}
+              onRebuild={forceRebuild}
+            />
+          </div>
+          <div style={{ display: activeTab === 'textures' ? 'block' : 'none' }}>
+            <RightPanel
+              params={params}
+              coverSlots={coverSlots}
+              pageConfigs={pageConfigs}
+              spreadPages={spreadPages}
+              spriteScenes={spriteScenes}
+              currentPage={editorPage}
+              onPageChange={setEditorPage}
+              onCoverSlotChange={onCoverSlotChange}
+              onPageConfigChange={onPageConfigChange}
+              onSpreadPagesChange={onSpreadPagesChange}
+              onRebuild={rebuildScenes}
+            />
+          </div>
+          <div style={{ display: activeTab === 'editor' ? 'block' : 'none' }}>
+            <PageEditor
+              currentPage={editorPage}
+              pageCount={params.pageCount}
+              spreadPages={spreadPages}
+              spriteScenes={spriteScenes}
+              onPageChange={setEditorPage}
+            />
+          </div>
+        </div>
+      ) : (
+        <button style={TOGGLE_BTN} onClick={() => setPanelOpen(true)}>{'\u2630'} Panel</button>
+      )}
     </>
   );
 }

@@ -9,7 +9,6 @@
  * left page and shows shared sprite controls.
  */
 
-import { useState } from 'react';
 import { loadImage, drawImageFit, getSpreadPairs } from '@objectifthunes/react-three-book-theatre';
 import type { SpritePlacement, ImageFit, SpriteScene } from '@objectifthunes/react-three-book-theatre';
 import type {
@@ -20,8 +19,8 @@ import type {
   CharacterConfig,
   ElementConfig,
 } from '../state';
-import { DEFAULT_CHARACTER, DEFAULT_ELEMENT } from '../state';
-import { PANEL_STYLE, SectionTitle, Slider, Checkbox, ColorPicker } from './UiHelpers';
+import { DEFAULT_ELEMENT } from '../state';
+import { SectionTitle, Slider, Checkbox } from './UiHelpers';
 
 // ── Shared styles ────────────────────────────────────────────────────────────
 
@@ -517,7 +516,6 @@ export default function RightPanel({
   onSpreadPagesChange,
   onRebuild,
 }: RightPanelProps) {
-  const [collapsed, setCollapsed] = useState(false);
   const coverLabels = ['Front Outer', 'Front Inner', 'Back Inner', 'Back Outer'];
 
   // Redirect right half of spread to its left page
@@ -534,203 +532,184 @@ export default function RightPanel({
     : `Page ${effectiveIdx + 1}`;
 
   return (
-    <div style={{ ...PANEL_STYLE, right: 10 }}>
-      <h1
-        style={{ margin: '0 0 10px', fontSize: 16, fontWeight: 700, position: 'relative', cursor: 'pointer' }}
-        onClick={() => setCollapsed((c) => !c)}
-      >
-        Textures & Sprites
-        <span style={{
-          position: 'absolute', top: 0, right: 0, width: 22, height: 22, padding: 0,
-          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(236,242,255,0.15)',
-          borderRadius: 6, color: 'rgba(236,242,255,0.68)', fontSize: 11, lineHeight: '22px',
-          textAlign: 'center', display: 'inline-block',
-        }}>
-          {collapsed ? '\u25B8' : '\u25BE'}
-        </span>
-      </h1>
+    <>
+      {/* Cover Textures */}
+      <SectionTitle text="Cover Textures" />
+      {coverSlots.map((slot, i) => (
+        <ImageSlotCard
+          key={i}
+          label={coverLabels[i]}
+          slot={slot}
+          bgColor={params.coverColor}
+          showFitControls
+          onFitModeChange={(mode) => onCoverSlotChange(i, (s) => ({ ...s, fitMode: mode }))}
+          onFullBleedChange={(v) => onCoverSlotChange(i, (s) => ({ ...s, fullBleed: v }))}
+          onClear={() => {
+            if (slot.objectUrl) URL.revokeObjectURL(slot.objectUrl);
+            onCoverSlotChange(i, () => ({ ...slot, image: null, objectUrl: null, useImage: false }));
+          }}
+          onFileChange={async (file) => {
+            const result = await loadImage(file);
+            if (!result) return;
+            if (slot.objectUrl) URL.revokeObjectURL(slot.objectUrl);
+            onCoverSlotChange(i, () => ({ ...slot, image: result.image, objectUrl: result.objectUrl, useImage: true }));
+          }}
+        />
+      ))}
 
-      {!collapsed && (
-        <div>
-          {/* Cover Textures */}
-          <SectionTitle text="Cover Textures" />
-          {coverSlots.map((slot, i) => (
-            <ImageSlotCard
-              key={i}
-              label={coverLabels[i]}
-              slot={slot}
-              bgColor={params.coverColor}
-              showFitControls
-              onFitModeChange={(mode) => onCoverSlotChange(i, (s) => ({ ...s, fitMode: mode }))}
-              onFullBleedChange={(v) => onCoverSlotChange(i, (s) => ({ ...s, fullBleed: v }))}
-              onClear={() => {
-                if (slot.objectUrl) URL.revokeObjectURL(slot.objectUrl);
-                onCoverSlotChange(i, () => ({ ...slot, image: null, objectUrl: null, useImage: false }));
-              }}
-              onFileChange={async (file) => {
-                const result = await loadImage(file);
-                if (!result) return;
-                if (slot.objectUrl) URL.revokeObjectURL(slot.objectUrl);
-                onCoverSlotChange(i, () => ({ ...slot, image: result.image, objectUrl: result.objectUrl, useImage: true }));
-              }}
-            />
-          ))}
+      {/* Page Navigation */}
+      <SectionTitle text="Page" />
 
-          {/* Page Navigation */}
-          <SectionTitle text="Page" />
-
-          {/* Spread checkbox for eligible pairs */}
-          {eligibleSpreads.has(effectiveIdx) && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '0 0 8px', fontSize: 12, color: 'rgba(236,242,255,0.92)', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={isSpread}
-                style={{ width: 14, height: 14 }}
-                onChange={(e) => {
-                  const next = new Set(spreadPages);
-                  if (e.target.checked) next.add(effectiveIdx); else next.delete(effectiveIdx);
-                  onSpreadPagesChange(next);
-                }}
-              />
-              Double-page spread: Pages {effectiveIdx + 1}&ndash;{effectiveIdx + 2}
-            </label>
-          )}
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-            <button
-              type="button"
-              style={MINI_BTN}
-              disabled={effectiveIdx <= 0}
-              onClick={() => onPageChange(effectiveIdx - 1)}
-            >
-              ←
-            </button>
-            <input
-              type="number"
-              min={1}
-              max={params.pageCount}
-              value={effectiveIdx + 1}
-              style={{ ...MINI_SELECT, width: 42, textAlign: 'center' }}
-              onChange={(e) => {
-                const v = Math.max(1, Math.min(params.pageCount, parseInt(e.target.value, 10) || 1)) - 1;
-                onPageChange(v);
-              }}
-            />
-            <span style={{ fontSize: 12, color: 'rgba(236,242,255,0.7)' }}>
-              / {params.pageCount}
-            </span>
-            {isSpread && (
-              <span style={{ fontSize: 11, color: 'rgba(137,216,176,0.85)' }}>
-                (Spread {effectiveIdx + 1}&ndash;{effectiveIdx + 2})
-              </span>
-            )}
-            <button
-              type="button"
-              style={MINI_BTN}
-              disabled={effectiveIdx >= params.pageCount - 1}
-              onClick={() => onPageChange(effectiveIdx + 1)}
-            >
-              →
-            </button>
-          </div>
-
-          {/* Page background card */}
-          <PageBackgroundCard
-            label={pageLabel}
-            pageIndex={effectiveIdx}
-            config={cfg}
-            bgColor={params.pageColor}
-            spriteScene={scene}
-            onChange={(updater) => onPageConfigChange(effectiveIdx, updater)}
-            onRebuild={onRebuild}
-          />
-
-          {/* Sprites section */}
-          <SectionTitle text="Sprites" />
-          <Slider
-            label="Horizon" min={0} max={1} step={0.01} value={cfg.horizonFraction}
-            onChange={(v) => {
-              onPageConfigChange(effectiveIdx, (c) => ({ ...c, horizonFraction: v }));
-              if (scene) scene.horizonFraction = v;
+      {/* Spread checkbox for eligible pairs */}
+      {eligibleSpreads.has(effectiveIdx) && (
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '0 0 8px', fontSize: 12, color: 'rgba(236,242,255,0.92)', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={isSpread}
+            style={{ width: 14, height: 14 }}
+            onChange={(e) => {
+              const next = new Set(spreadPages);
+              if (e.target.checked) next.add(effectiveIdx); else next.delete(effectiveIdx);
+              onSpreadPagesChange(next);
             }}
           />
-          <Slider
-            label="Scene Depth (m)" min={1} max={200} step={1} value={cfg.pageDistance}
-            onChange={(v) => {
-              onPageConfigChange(effectiveIdx, (c) => ({ ...c, pageDistance: v }));
-              if (scene) scene.pageDistance = v;
-            }}
-          />
-
-          {/* Characters */}
-          {cfg.characters.map((ch, chIdx) => (
-            <CharacterEditor
-              key={chIdx}
-              index={chIdx}
-              config={ch}
-              maxDistance={cfg.pageDistance}
-              bgColor={cfg.background}
-              spriteScene={scene}
-              onChange={(updater) => {
-                onPageConfigChange(effectiveIdx, (c) => {
-                  const chars = [...c.characters];
-                  chars[chIdx] = updater(chars[chIdx]);
-                  return { ...c, characters: chars };
-                });
-              }}
-            />
-          ))}
-
-          {/* Elements */}
-          <SectionTitle text="Elements" />
-          {cfg.elements.map((el, elIdx) => (
-            <ElementEditor
-              key={elIdx}
-              index={elIdx}
-              config={el}
-              maxDistance={cfg.pageDistance}
-              bgColor={cfg.background}
-              spriteScene={scene}
-              onChange={(updater) => {
-                onPageConfigChange(effectiveIdx, (c) => {
-                  const els = [...c.elements];
-                  els[elIdx] = updater(els[elIdx]);
-                  return { ...c, elements: els };
-                });
-              }}
-              onRemove={() => {
-                if (scene) {
-                  const spriteEl = scene.elements[elIdx];
-                  if (spriteEl) scene.removeElement(spriteEl);
-                }
-                onPageConfigChange(effectiveIdx, (c) => ({
-                  ...c,
-                  elements: c.elements.filter((_, i) => i !== elIdx),
-                }));
-              }}
-            />
-          ))}
-
-          <button
-            type="button"
-            style={{ ...MINI_BTN, width: '100%', marginTop: 4 }}
-            onClick={() => {
-              onPageConfigChange(effectiveIdx, (c) => ({
-                ...c,
-                elements: [...c.elements, { ...DEFAULT_ELEMENT }],
-              }));
-              scene?.addElement({
-                placement: DEFAULT_ELEMENT.placement,
-                distance: DEFAULT_ELEMENT.distance,
-                intrinsicSize: DEFAULT_ELEMENT.intrinsicSize,
-                depthScaling: DEFAULT_ELEMENT.depthScaling,
-              });
-            }}
-          >
-            + Add Element
-          </button>
-        </div>
+          Double-page spread: Pages {effectiveIdx + 1}&ndash;{effectiveIdx + 2}
+        </label>
       )}
-    </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+        <button
+          type="button"
+          style={MINI_BTN}
+          disabled={effectiveIdx <= 0}
+          onClick={() => onPageChange(effectiveIdx - 1)}
+        >
+          &larr;
+        </button>
+        <input
+          type="number"
+          min={1}
+          max={params.pageCount}
+          value={effectiveIdx + 1}
+          style={{ ...MINI_SELECT, width: 42, textAlign: 'center' }}
+          onChange={(e) => {
+            const v = Math.max(1, Math.min(params.pageCount, parseInt(e.target.value, 10) || 1)) - 1;
+            onPageChange(v);
+          }}
+        />
+        <span style={{ fontSize: 12, color: 'rgba(236,242,255,0.7)' }}>
+          / {params.pageCount}
+        </span>
+        {isSpread && (
+          <span style={{ fontSize: 11, color: 'rgba(137,216,176,0.85)' }}>
+            (Spread {effectiveIdx + 1}&ndash;{effectiveIdx + 2})
+          </span>
+        )}
+        <button
+          type="button"
+          style={MINI_BTN}
+          disabled={effectiveIdx >= params.pageCount - 1}
+          onClick={() => onPageChange(effectiveIdx + 1)}
+        >
+          &rarr;
+        </button>
+      </div>
+
+      {/* Page background card */}
+      <PageBackgroundCard
+        label={pageLabel}
+        pageIndex={effectiveIdx}
+        config={cfg}
+        bgColor={params.pageColor}
+        spriteScene={scene}
+        onChange={(updater) => onPageConfigChange(effectiveIdx, updater)}
+        onRebuild={onRebuild}
+      />
+
+      {/* Sprites section */}
+      <SectionTitle text="Sprites" />
+      <Slider
+        label="Horizon" min={0} max={1} step={0.01} value={cfg.horizonFraction}
+        onChange={(v) => {
+          onPageConfigChange(effectiveIdx, (c) => ({ ...c, horizonFraction: v }));
+          if (scene) scene.horizonFraction = v;
+        }}
+      />
+      <Slider
+        label="Scene Depth (m)" min={1} max={200} step={1} value={cfg.pageDistance}
+        onChange={(v) => {
+          onPageConfigChange(effectiveIdx, (c) => ({ ...c, pageDistance: v }));
+          if (scene) scene.pageDistance = v;
+        }}
+      />
+
+      {/* Characters */}
+      {cfg.characters.map((ch, chIdx) => (
+        <CharacterEditor
+          key={chIdx}
+          index={chIdx}
+          config={ch}
+          maxDistance={cfg.pageDistance}
+          bgColor={cfg.background}
+          spriteScene={scene}
+          onChange={(updater) => {
+            onPageConfigChange(effectiveIdx, (c) => {
+              const chars = [...c.characters];
+              chars[chIdx] = updater(chars[chIdx]);
+              return { ...c, characters: chars };
+            });
+          }}
+        />
+      ))}
+
+      {/* Elements */}
+      <SectionTitle text="Elements" />
+      {cfg.elements.map((el, elIdx) => (
+        <ElementEditor
+          key={elIdx}
+          index={elIdx}
+          config={el}
+          maxDistance={cfg.pageDistance}
+          bgColor={cfg.background}
+          spriteScene={scene}
+          onChange={(updater) => {
+            onPageConfigChange(effectiveIdx, (c) => {
+              const els = [...c.elements];
+              els[elIdx] = updater(els[elIdx]);
+              return { ...c, elements: els };
+            });
+          }}
+          onRemove={() => {
+            if (scene) {
+              const spriteEl = scene.elements[elIdx];
+              if (spriteEl) scene.removeElement(spriteEl);
+            }
+            onPageConfigChange(effectiveIdx, (c) => ({
+              ...c,
+              elements: c.elements.filter((_, i) => i !== elIdx),
+            }));
+          }}
+        />
+      ))}
+
+      <button
+        type="button"
+        style={{ ...MINI_BTN, width: '100%', marginTop: 4 }}
+        onClick={() => {
+          onPageConfigChange(effectiveIdx, (c) => ({
+            ...c,
+            elements: [...c.elements, { ...DEFAULT_ELEMENT }],
+          }));
+          scene?.addElement({
+            placement: DEFAULT_ELEMENT.placement,
+            distance: DEFAULT_ELEMENT.distance,
+            intrinsicSize: DEFAULT_ELEMENT.intrinsicSize,
+            depthScaling: DEFAULT_ELEMENT.depthScaling,
+          });
+        }}
+      >
+        + Add Element
+      </button>
+    </>
   );
 }

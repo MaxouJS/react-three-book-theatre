@@ -9,7 +9,7 @@
  * editor shows the full double-width canvas with a centre fold line.
  */
 
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { Sprite, renderedSize } from '@objectifthunes/react-three-book-theatre';
 import type { Positionable, SpriteScene } from '@objectifthunes/react-three-book-theatre';
 
@@ -30,7 +30,6 @@ export default function PageEditor({ currentPage, pageCount, spreadPages, sprite
   const hoveredRef = useRef<Positionable | null>(null);
   const pointerOriginRef = useRef({ x: 0, y: 0 });
   const itemOriginRef = useRef({ x: 0, y: 0 });
-  const [collapsed, setCollapsed] = useState(false);
 
   // Redirect right half of spread to its left page
   const isRightOfSpread = spreadPages.has(currentPage - 1);
@@ -77,7 +76,7 @@ export default function PageEditor({ currentPage, pageCount, spreadPages, sprite
   // Render loop
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || collapsed) return;
+    if (!canvas) return;
     const ctx = canvas.getContext('2d')!;
 
     function render() {
@@ -148,7 +147,7 @@ export default function PageEditor({ currentPage, pageCount, spreadPages, sprite
 
     rafRef.current = requestAnimationFrame(render);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [effectiveIdx, isSpread, collapsed, getScene, getDisplayMetrics, allItems, computeItemBox]);
+  }, [effectiveIdx, isSpread, getScene, getDisplayMetrics, allItems, computeItemBox]);
 
   const displayToCanvas = useCallback((clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
@@ -209,30 +208,8 @@ export default function PageEditor({ currentPage, pageCount, spreadPages, sprite
     : `Page ${effectiveIdx + 1}`;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: 40,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        padding: 10,
-        borderRadius: 12,
-        color: '#ecf2ff',
-        fontFamily: "'Avenir Next', 'Trebuchet MS', 'Segoe UI', sans-serif",
-        fontSize: 12,
-        background: 'rgba(8, 10, 18, 0.78)',
-        border: '1px solid rgba(214, 225, 255, 0.2)',
-        boxShadow: '0 18px 42px rgba(0, 0, 0, 0.38)',
-        backdropFilter: 'blur(8px)',
-        userSelect: 'none',
-        zIndex: 100,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-      }}
-      onPointerDown={(e) => e.stopPropagation()}
-    >
-      {/* Title + collapse toggle */}
+    <>
+      {/* Title */}
       <div
         style={{
           fontSize: 11,
@@ -241,58 +218,47 @@ export default function PageEditor({ currentPage, pageCount, spreadPages, sprite
           textTransform: 'uppercase',
           color: 'rgba(236,242,255,0.58)',
           marginBottom: 8,
-          textAlign: 'center',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
         }}
-        onClick={() => setCollapsed((c) => !c)}
       >
-        <span>{collapsed ? '\u25B8' : '\u25BE'}</span>
         Page Editor — drag to move · scroll to resize
       </div>
 
       {/* Page navigation */}
-      {!collapsed && (
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 }}>
-          <button
-            style={NAV_BTN}
-            onClick={() => onPageChange(Math.max(0, effectiveIdx - 1))}
-            disabled={effectiveIdx <= 0}
-          >
-            ←
-          </button>
-          <span style={{ fontSize: 12, color: 'rgba(236,242,255,0.85)', minWidth: 60, textAlign: 'center' }}>
-            {displayLabel} / {pageCount}
-          </span>
-          <button
-            style={NAV_BTN}
-            onClick={() => onPageChange(Math.min(pageCount - 1, effectiveIdx + 1))}
-            disabled={effectiveIdx >= pageCount - 1}
-          >
-            →
-          </button>
-        </div>
-      )}
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 }}>
+        <button
+          style={NAV_BTN}
+          onClick={() => onPageChange(Math.max(0, effectiveIdx - 1))}
+          disabled={effectiveIdx <= 0}
+        >
+          &larr;
+        </button>
+        <span style={{ fontSize: 12, color: 'rgba(236,242,255,0.85)', minWidth: 60, textAlign: 'center' }}>
+          {displayLabel} / {pageCount}
+        </span>
+        <button
+          style={NAV_BTN}
+          onClick={() => onPageChange(Math.min(pageCount - 1, effectiveIdx + 1))}
+          disabled={effectiveIdx >= pageCount - 1}
+        >
+          &rarr;
+        </button>
+      </div>
 
       {/* Canvas */}
-      {!collapsed && (
-        <canvas
-          ref={canvasRef}
-          style={{
-            display: 'block',
-            borderRadius: 8,
-            cursor: draggingRef.current ? 'grabbing' : 'crosshair',
-            border: '1px solid rgba(236,242,255,0.12)',
-          }}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onWheel={onWheel}
-        />
-      )}
-    </div>
+      <canvas
+        ref={canvasRef}
+        style={{
+          display: 'block',
+          borderRadius: 8,
+          cursor: draggingRef.current ? 'grabbing' : 'crosshair',
+          border: '1px solid rgba(236,242,255,0.12)',
+        }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onWheel={onWheel}
+      />
+    </>
   );
 }
 
