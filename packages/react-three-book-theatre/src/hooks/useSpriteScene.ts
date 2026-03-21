@@ -6,25 +6,10 @@
  * is preserved across option changes — sprite state is never lost.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { SpriteScene } from '../core/SpriteScene';
 import type { SpriteSceneOptions } from '../core/SpriteScene';
-
-function applySpriteSceneOptions(scene: SpriteScene, options?: SpriteSceneOptions): void {
-  if (!options) return;
-  const w = options.width  ?? 512;
-  const h = options.height ?? 512;
-  if (w !== scene.canvas.width || h !== scene.canvas.height) {
-    scene.resize(w, h);
-  }
-  if (options.background       !== undefined) scene.background       = options.background;
-  if (options.horizonFraction   !== undefined) scene.horizonFraction   = options.horizonFraction;
-  if (options.pageDistance      !== undefined) scene.pageDistance      = options.pageDistance;
-  if (options.animated          !== undefined) scene.animated          = options.animated;
-  if (options.depthScaling      !== undefined) scene.depthScaling      = options.depthScaling;
-  if (options.backgroundImage   !== undefined) scene.backgroundImage   = options.backgroundImage;
-  if (options.backgroundImageFit !== undefined) scene.backgroundImageFit = options.backgroundImageFit;
-}
+import { applySpriteSceneOptions } from './applySpriteSceneOptions';
 
 export function useSpriteScene(options?: SpriteSceneOptions): SpriteScene {
   const ref = useRef<SpriteScene | null>(null);
@@ -33,7 +18,10 @@ export function useSpriteScene(options?: SpriteSceneOptions): SpriteScene {
     ref.current = new SpriteScene(options);
   }
 
-  applySpriteSceneOptions(ref.current, options);
+  // Apply options in useLayoutEffect instead of during render (concurrent-mode safe)
+  useLayoutEffect(() => {
+    if (ref.current) applySpriteSceneOptions(ref.current, options);
+  });
 
   useEffect(() => {
     return () => {

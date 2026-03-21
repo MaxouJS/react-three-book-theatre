@@ -84,10 +84,7 @@ export abstract class Positionable {
     this.x = options.x ?? margin + Math.random() * (this.canvasW - margin * 2);
   }
 
-  /**
-   * Resize: scale x proportionally, preserve depth (r) in new coordinate space.
-   * Subclasses override to also scale origin, walk targets, etc.
-   */
+  /** @internal Called by SpriteScene.resize(). Do not call directly. */
   _resize(newW: number, newH: number, newHorizonY: number): void {
     const savedR = this.r;
     const xFrac  = this.canvasW > 0 ? this.x / this.canvasW : 0.5;

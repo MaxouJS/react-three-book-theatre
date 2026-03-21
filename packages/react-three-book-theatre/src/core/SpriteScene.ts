@@ -25,7 +25,7 @@ import type { Positionable, SpritePlacement } from './Positionable';
 import { drawImageFit } from './canvas-utils';
 import type { ImageFit } from './canvas-utils';
 
-export type { ImageFit };
+// ImageFit is already exported from index.ts via canvas-utils.ts
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -38,7 +38,7 @@ export interface SpriteSceneOptions {
   background?: string;
   /**
    * Fraction of canvas height where the horizon lies (default 0.40).
-   * Purely cosmetic — does not affect the size formula.
+   * Affects rendered sprite size via horizonY → r → renderedSize().
    */
   horizonFraction?: number;
   /**
@@ -109,6 +109,8 @@ export class SpriteScene {
   private _animated: boolean;
   private _depthScaling: boolean;
   private readonly _drawables: Positionable[] = [];
+  private _disposed = false;
+  private _nextPaletteIdx = 0;
 
   get horizonFraction(): number { return this._horizonY / this.height; }
 
@@ -117,6 +119,7 @@ export class SpriteScene {
    * so their canvas positions are recomputed from the new horizonY.
    */
   set horizonFraction(v: number) {
+    if (!Number.isFinite(v)) return;
     const newHorizonY = this.height * Math.max(0, Math.min(1, v));
     for (const s of this.sprites)  s.updateHorizonY(newHorizonY);
     for (const e of this.elements) e.updateHorizonY(newHorizonY);
@@ -128,6 +131,7 @@ export class SpriteScene {
 
   get pageDistance(): number { return this._pageDistance; }
   set pageDistance(v: number) {
+    if (!Number.isFinite(v)) return;
     this._pageDistance = Math.max(0.1, v);
     for (const s of this.sprites)  s.pageDistance = this._pageDistance;
     for (const e of this.elements) e.pageDistance = this._pageDistance;
@@ -201,12 +205,16 @@ export class SpriteScene {
   // ── Public API ────────────────────────────────────────────────────────────
 
   addSprite(options?: SpriteOptions): Sprite {
-    const s = new Sprite(this.width, this.height, this._horizonY, {
+    const opts: SpriteOptions = {
       animated: this._animated,
       depthScaling: this._depthScaling,
       ...options,
       pageDistance: this._pageDistance,
-    });
+    };
+    if (opts.color === undefined) {
+      opts._paletteIdx = this._nextPaletteIdx++;
+    }
+    const s = new Sprite(this.width, this.height, this._horizonY, opts);
     this.sprites.push(s);
     return s;
   }
@@ -281,6 +289,7 @@ export class SpriteScene {
    *             cloned material textures — see module comment above.
    */
   update(dt: number, root?: THREE.Object3D): void {
+    if (this._disposed) return;
     for (const s of this.sprites) s.update(dt);
     this._render();
     this.texture.needsUpdate = true;
@@ -309,6 +318,12 @@ export class SpriteScene {
 
   dispose(): void {
     this.texture.dispose();
+    this.canvas.width = 0;
+    this.canvas.height = 0;
+    this.sprites.length = 0;
+    this.elements.length = 0;
+    this._drawables.length = 0;
+    this._disposed = true;
   }
 
   // ── Private ───────────────────────────────────────────────────────────────

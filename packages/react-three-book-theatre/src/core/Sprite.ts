@@ -20,7 +20,7 @@ import { depthScale, renderedSize } from './perspective';
 import { Positionable } from './Positionable';
 import type { SpritePlacement } from './Positionable';
 
-export type { SpritePlacement };
+// SpritePlacement is already exported from index.ts via Positionable.ts
 
 export type SpriteState = 'idle' | 'walk' | 'action';
 
@@ -59,6 +59,8 @@ export interface SpriteOptions {
   depthScaling?: boolean;
   /** Patrol radius in metres. 0 = no movement. Default Infinity (unlimited). */
   patrolRadius?: number;
+  /** @internal Palette index assigned by SpriteScene. Do not set manually. */
+  _paletteIdx?: number;
 }
 
 // ── Palette ───────────────────────────────────────────────────────────────────
@@ -68,8 +70,6 @@ const PALETTE = [
   '#e8c850', '#c050e8', '#50e8d4',
   '#e87850', '#78e850', '#5078e8',
 ];
-let _paletteIdx = 0;
-function nextColor(): string { return PALETTE[_paletteIdx++ % PALETTE.length]; }
 
 // ── Sprite ────────────────────────────────────────────────────────────────────
 
@@ -128,7 +128,7 @@ export class Sprite extends Positionable {
       options?.depthScaling  ?? true,
     );
     this.animated    = options?.animated    ?? true;
-    this.color       = options?.color       ?? nextColor();
+    this.color       = options?.color       ?? PALETTE[(options?._paletteIdx ?? 0) % PALETTE.length];
     this.idleImage   = options?.idleImage   ?? null;
     this.walkImage   = options?.walkImage   ?? null;
     this.actionImage = options?.actionImage ?? null;

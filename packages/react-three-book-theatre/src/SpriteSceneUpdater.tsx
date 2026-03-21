@@ -13,6 +13,7 @@
  *   </Book>
  */
 
+import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useBook } from '@objectifthunes/react-three-book';
 import type { SpriteScene } from './core/SpriteScene';
@@ -30,9 +31,11 @@ export interface SpriteSceneUpdaterProps {
  */
 export function SpriteSceneUpdater({ scenes }: SpriteSceneUpdaterProps) {
   const book = useBook();
+  const seenRef = useRef(new Set<SpriteScene>());
 
   useFrame((_, delta) => {
-    const seen = new Set<SpriteScene>();
+    const seen = seenRef.current;
+    seen.clear();
     for (const scene of scenes) {
       if (seen.has(scene)) continue;
       seen.add(scene);

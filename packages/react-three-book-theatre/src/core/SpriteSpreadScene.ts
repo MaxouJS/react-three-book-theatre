@@ -60,10 +60,18 @@ export type SpriteSpreadSceneOptions = Omit<SpriteSceneOptions, 'width'> & {
 export class SpriteSpreadScene {
   /** The underlying double-width SpriteScene.  Add sprites / elements here. */
   readonly scene: SpriteScene;
-  /** Left-half page content (textureST crops to x=[0, 0.5]). */
+  /**
+   * Left-half page content (textureST crops to x=[0, 0.5]).
+   * Invalid after `dispose()` — do not reference.
+   */
   readonly left: SpreadHalf;
-  /** Right-half page content (textureST crops to x=[0.5, 1]). */
+  /**
+   * Right-half page content (textureST crops to x=[0.5, 1]).
+   * Invalid after `dispose()` — do not reference.
+   */
   readonly right: SpreadHalf;
+
+  private _disposed = false;
 
   constructor(options?: SpriteSpreadSceneOptions) {
     const pw = options?.pageWidth ?? 512;
@@ -86,10 +94,12 @@ export class SpriteSpreadScene {
    * @param root Optional THREE.Object3D to traverse for material sync.
    */
   update(dt: number, root?: THREE.Object3D): void {
+    if (this._disposed) return;
     this.scene.update(dt, root);
   }
 
   dispose(): void {
     this.scene.dispose();
+    this._disposed = true;
   }
 }

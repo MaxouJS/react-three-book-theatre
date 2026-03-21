@@ -10,51 +10,41 @@
  * existing scenes, other property changes apply via live setters.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { SpriteScene } from '../core/SpriteScene';
 import type { SpriteSceneOptions } from '../core/SpriteScene';
+import { applySpriteSceneOptions } from './applySpriteSceneOptions';
 
 export function useSpriteScenes(
   count: number,
   options?: SpriteSceneOptions,
 ): SpriteScene[] {
   const ref = useRef<SpriteScene[]>([]);
-  const prevCountRef = useRef(0);
+  const desiredCountRef = useRef(0);
+  desiredCountRef.current = count;
 
-  if (count !== prevCountRef.current) {
+  // Defer scene creation/disposal to useLayoutEffect (concurrent-mode safe)
+  useLayoutEffect(() => {
     const old = ref.current;
-    const next: SpriteScene[] = [];
+    if (count === old.length) return;
 
+    const next: SpriteScene[] = [];
     for (let i = 0; i < count; i++) {
       next.push(i < old.length ? old[i] : new SpriteScene(options));
     }
-
     // Dispose removed scenes
     for (let i = count; i < old.length; i++) {
       old[i].dispose();
     }
-
     ref.current = next;
-    prevCountRef.current = count;
-  }
+  }, [count]);
 
-  // Apply reactive options (resize + live setters) to all existing scenes
-  if (options) {
-    const w = options.width  ?? 512;
-    const h = options.height ?? 512;
+  // Apply reactive options in useLayoutEffect instead of during render
+  useLayoutEffect(() => {
     for (const scene of ref.current) {
-      if (w !== scene.canvas.width || h !== scene.canvas.height) {
-        scene.resize(w, h);
-      }
-      if (options.background       !== undefined) scene.background       = options.background;
-      if (options.horizonFraction   !== undefined) scene.horizonFraction   = options.horizonFraction;
-      if (options.pageDistance      !== undefined) scene.pageDistance      = options.pageDistance;
-      if (options.animated          !== undefined) scene.animated          = options.animated;
-      if (options.depthScaling      !== undefined) scene.depthScaling      = options.depthScaling;
-      if (options.backgroundImage   !== undefined) scene.backgroundImage   = options.backgroundImage;
-      if (options.backgroundImageFit !== undefined) scene.backgroundImageFit = options.backgroundImageFit;
+      applySpriteSceneOptions(scene, options);
     }
-  }
+  });
 
   useEffect(() => {
     return () => {

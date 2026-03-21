@@ -6,7 +6,7 @@ import { renderedSize } from './perspective';
 import { Positionable } from './Positionable';
 import type { SpritePlacement } from './Positionable';
 
-export type { SpritePlacement };
+// SpritePlacement is already exported from index.ts via Positionable.ts
 
 export interface ElementOptions {
   x?: number;
