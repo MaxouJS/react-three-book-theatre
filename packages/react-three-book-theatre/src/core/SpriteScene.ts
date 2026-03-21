@@ -96,9 +96,14 @@ export class SpriteScene {
   readonly sprites: Sprite[] = [];
   readonly elements: Element[] = [];
 
+  private _backgroundImage: HTMLImageElement | null;
+  private _backgroundImageFit: ImageFit;
+
   /** Replace at any time; will appear behind sprites on the next frame. */
-  backgroundImage: HTMLImageElement | null;
-  backgroundImageFit: ImageFit;
+  get backgroundImage(): HTMLImageElement | null { return this._backgroundImage; }
+  set backgroundImage(v: HTMLImageElement | null) { this._backgroundImage = v; this._dirty = true; }
+  get backgroundImageFit(): ImageFit { return this._backgroundImageFit; }
+  set backgroundImageFit(v: ImageFit) { this._backgroundImageFit = v; this._dirty = true; }
 
   private readonly ctx: CanvasRenderingContext2D;
   private width: number;
@@ -111,6 +116,9 @@ export class SpriteScene {
   private readonly _drawables: Positionable[] = [];
   private _disposed = false;
   private _nextPaletteIdx = 0;
+  private _dirty = true;
+  private _sortedR: number[] = [];
+  private readonly _singleMat: THREE.Material[] = [];
 
   get horizonFraction(): number { return this._horizonY / this.height; }
 
@@ -124,10 +132,11 @@ export class SpriteScene {
     for (const s of this.sprites)  s.updateHorizonY(newHorizonY);
     for (const e of this.elements) e.updateHorizonY(newHorizonY);
     this._horizonY = newHorizonY;
+    this._dirty = true;
   }
 
   get background(): string { return this._background; }
-  set background(v: string) { this._background = v; }
+  set background(v: string) { this._background = v; this._dirty = true; }
 
   get pageDistance(): number { return this._pageDistance; }
   set pageDistance(v: number) {
@@ -135,6 +144,7 @@ export class SpriteScene {
     this._pageDistance = Math.max(0.1, v);
     for (const s of this.sprites)  s.pageDistance = this._pageDistance;
     for (const e of this.elements) e.pageDistance = this._pageDistance;
+    this._dirty = true;
   }
 
   /** Scene-wide animation toggle.  When false, all sprites freeze. */
@@ -142,6 +152,7 @@ export class SpriteScene {
   set animated(v: boolean) {
     this._animated = v;
     for (const s of this.sprites) s.animated = v;
+    this._dirty = true;
   }
 
   /** Scene-wide depth-scaling toggle.  When false, all items render at intrinsicSize. */
@@ -150,6 +161,7 @@ export class SpriteScene {
     this._depthScaling = v;
     for (const s of this.sprites)  s.depthScaling = v;
     for (const e of this.elements) e.depthScaling = v;
+    this._dirty = true;
   }
 
   constructor(options?: SpriteSceneOptions) {
@@ -163,8 +175,8 @@ export class SpriteScene {
     this._pageDistance      = Math.max(0.1, options?.pageDistance ?? 10);
     this._animated          = options?.animated            ?? true;
     this._depthScaling      = options?.depthScaling        ?? true;
-    this.backgroundImage    = options?.backgroundImage    ?? null;
-    this.backgroundImageFit = options?.backgroundImageFit ?? 'cover';
+    this._backgroundImage    = options?.backgroundImage    ?? null;
+    this._backgroundImageFit = options?.backgroundImageFit ?? 'cover';
 
     this.canvas = document.createElement('canvas');
     this.canvas.width  = w;
@@ -200,6 +212,7 @@ export class SpriteScene {
     this._horizonY = newHeight * Math.max(0, Math.min(1, fraction));
     for (const s of this.sprites)  s._resize(newWidth, newHeight, this._horizonY);
     for (const e of this.elements) e._resize(newWidth, newHeight, this._horizonY);
+    this._dirty = true;
   }
 
   // ── Public API ────────────────────────────────────────────────────────────
@@ -216,12 +229,13 @@ export class SpriteScene {
     }
     const s = new Sprite(this.width, this.height, this._horizonY, opts);
     this.sprites.push(s);
+    this._dirty = true;
     return s;
   }
 
   removeSprite(sprite: Sprite): void {
     const idx = this.sprites.indexOf(sprite);
-    if (idx !== -1) this.sprites.splice(idx, 1);
+    if (idx !== -1) { this.sprites.splice(idx, 1); this._dirty = true; }
   }
 
   addElement(options?: ElementOptions): Element {
@@ -231,12 +245,13 @@ export class SpriteScene {
       pageDistance: this._pageDistance,
     });
     this.elements.push(e);
+    this._dirty = true;
     return e;
   }
 
   removeElement(element: Element): void {
     const idx = this.elements.indexOf(element);
-    if (idx !== -1) this.elements.splice(idx, 1);
+    if (idx !== -1) { this.elements.splice(idx, 1); this._dirty = true; }
   }
 
   /**
@@ -290,7 +305,15 @@ export class SpriteScene {
    */
   update(dt: number, root?: THREE.Object3D): void {
     if (this._disposed) return;
-    for (const s of this.sprites) s.update(dt);
+    // Sprites always animate, so mark dirty whenever any are animated
+    let anyAnimated = false;
+    for (const s of this.sprites) {
+      if (s.animated) anyAnimated = true;
+      s.update(dt);
+    }
+    if (anyAnimated) this._dirty = true;
+    if (!this._dirty) return;
+    this._dirty = false;
     this._render();
     this.texture.needsUpdate = true;
     if (root) this.syncMaterials(root);
@@ -307,8 +330,14 @@ export class SpriteScene {
     root.traverse((obj) => {
       if (!(obj as THREE.Mesh).isMesh) return;
       const mesh = obj as THREE.Mesh;
-      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-      for (const mat of mats) {
+      if (Array.isArray(mesh.material)) {
+        for (const mat of mesh.material) {
+          if (hasMaterialMap(mat) && mat.map.image === this.canvas) {
+            mat.map.needsUpdate = true;
+          }
+        }
+      } else {
+        const mat = mesh.material;
         if (hasMaterialMap(mat) && mat.map.image === this.canvas) {
           mat.map.needsUpdate = true;
         }
@@ -334,8 +363,8 @@ export class SpriteScene {
     ctx.fillStyle = this._background;
     ctx.fillRect(0, 0, width, height);
 
-    if (this.backgroundImage) {
-      drawImageFit(ctx, this.backgroundImage, 0, 0, width, height, this.backgroundImageFit);
+    if (this._backgroundImage) {
+      drawImageFit(ctx, this._backgroundImage, 0, 0, width, height, this._backgroundImageFit);
     }
 
     // Subtle horizon line
